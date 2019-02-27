@@ -1,8 +1,6 @@
 # driver-attack-platform
 
-Background: https://gitlab.na.nccgroup.com/gpike/driver-attack-platform/wikis/home
-
-Client code: https://gitlab.na.nccgroup.com/jheath/driver-attack-platform-ui
+Background: https://github.com/nccgroup/dapr/wiki
 
 # prerequisites
 * A relatively recent verison of nodejs (tested with version v11.4.0)
