@@ -30,7 +30,7 @@
     "clean-dapr": "rm -rf node_modules/ package-lock.json",
     "clean-ui": "rm -rf ui/node_modules/ ui/package-lock.json",
     "watch-frida":
-      "frida-compile frida-scripts/ioctler.js -o bin/ioctler.js -w",
+      "frida-compile src/frida-scripts/ioctler.js -o bin/ioctler.js -w",
     "watch-app": "npx tsc",
     "watch-ui": "cd ui && npm run start",
     "dap": "node --require source-map-support/register bin/index.js",
