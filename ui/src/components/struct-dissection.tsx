@@ -34,11 +34,6 @@ export default class StructDissection extends React.Component<
             return <option key={type.name}>{type.name}</option>;
           })}
         </select>
-        <ReactTable
-          className="struct-dissection-table"
-          columns={columns}
-          data={this.props.fields}
-        />
       </div>
     );
   }

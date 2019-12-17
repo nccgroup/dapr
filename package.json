@@ -12,28 +12,29 @@
     "express": "^4.16.4",
     "express-ws": "^4.0.0",
     "frida": "^12.7.5",
-    "int64-buffer": "^0.99.1007"
+    "int64-buffer": "^0.99.1007",
+    "ps-list": "^6.3.0"
   },
   "devDependencies": {
     "@types/node": "^10.14.19",
     "concurrently": "^4.1.2",
     "frida-compile": "^9.0.8",
     "source-map-support": "^0.5.9",
+    "supervisor": "^0.12.0",
     "typescript": "^3.6.3"
   },
   "bin": {
     "dap": "bin/index.js"
   },
   "scripts": {
-    "start": "npx concurrently 'npm run watch-*'",
+    "start": "npx concurrently 'npm run watch-*' 'npm run dap'",
     "rm": "npx concurrently 'npm run clean-*'",
     "clean-dapr": "rm -rf node_modules/ package-lock.json",
     "clean-ui": "rm -rf ui/node_modules/ ui/package-lock.json",
-    "watch-frida":
-      "frida-compile src/frida-scripts/ioctler.js -o bin/ioctler.js -w",
+    "watch-frida": "frida-compile src/frida-scripts/ioctler.js -o bin/ioctler.js -w",
     "watch-app": "npx tsc",
     "watch-ui": "cd ui && npm run start",
-    "dap": "node --require source-map-support/register bin/index.js",
+    "dap": "supervisor -w bin  bin/index.js",
     "dapd": "node inspect --require source-map-support/register bin/index.js"
   }
 }

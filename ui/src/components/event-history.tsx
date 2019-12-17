@@ -32,7 +32,9 @@ export default class EventHistory extends React.Component<
     if (this.props.selectedEventID === -1) {
       loading = true;
     }
-    return (
+
+    return <div />;
+    /*    return (
       <ReactTable
         data={this.props.events}
         columns={columns}
@@ -65,6 +67,6 @@ export default class EventHistory extends React.Component<
           }
         }}
       />
-    );
+    );*/
   }
 }

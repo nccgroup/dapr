@@ -20,8 +20,8 @@ export class DriverTable extends React.Component<DriverTableProps, {}> {
 
       loading = true;
     }
-
-    return (
+    return <div />;
+    /*    return (
       <ReactTable
         className={"full-page-height one-third-width"}
         data={this.props.drivers}
@@ -54,6 +54,6 @@ export class DriverTable extends React.Component<DriverTableProps, {}> {
           }
         }}
       />
-    );
+    );*/
   }
 }

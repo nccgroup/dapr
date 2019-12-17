@@ -2,8 +2,8 @@ import { action } from "typesafe-actions";
 import { Event } from "../types/event";
 import { StructDef } from "../types/struct-def";
 
+export const SELECT_PROCESS = "SELECT_PROCESS";
 // DRIVER SELECTION DASHBOARD ACTIONS
-
 export const ADD_EVENT = "ADD_EVENT";
 export const ADD_EVENTS = "ADD_EVENTS";
 export const SELECT_DRIVER = "SELECT_DRIVER";
@@ -18,7 +18,7 @@ export const back = () => action(BACK);
 // EVENT DASHBOARD ACTIONS
 
 export const SELECT_HISTORY_EVENT = "SELECT_HISTORY_EVENT";
-
+export const selectProcess = (pid: string) => action(SELECT_PROCESS, pid);
 export const selectEvent = (i: number) => action(SELECT_EVENT, i);
 export const selectHistoryEvent = (i: number) =>
   action(SELECT_HISTORY_EVENT, i);

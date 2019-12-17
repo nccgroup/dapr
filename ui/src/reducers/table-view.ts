@@ -17,27 +17,29 @@ export interface State {
   types: StructDef[];
   selectedTypeForDissector: string;
   selectedTypeForEditor: string;
+  selectedProcess: string;
   url: string;
 }
 
 const defaultState: State = {
-  events: testEventData, //[],
+  events: [],
   selectedDupEventKey: "",
   selectedEventID: -1,
   selectedDriver: "",
+  selectedProcess: "",
   types: [],
   selectedTypeForDissector: "",
   selectedTypeForEditor: "",
   url: "localhost:8888"
 };
 
-// State machine for the first view. Users can do one of the following actions:
-// 1. click a row in the driver table
-// 2. click a row in the event table
-// 3. add a new event to the total set of events
-// 4. replace all events
 export function tableView(state = defaultState, action: DriverTableAction) {
   switch (action.type) {
+    case driverTableActions.SELECT_PROCESS:
+      return Object.assign({}, state, {
+        selectedProcess: action.payload,
+        events: []
+      });
     case driverTableActions.ADD_EVENT:
       return Object.assign({}, state, {
         events: state.events.concat(action.payload)

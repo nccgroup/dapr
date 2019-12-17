@@ -1,13 +1,14 @@
-import * as process from 'process';
-import { FridaSession, SessionStatus } from './frida_session';
-import * as express from 'express';
-import * as expressWs from 'express-ws';
-import { Message } from 'frida/dist/script';
-import * as bodyParser from 'body-parser';
-import * as cors from 'cors';
-import { Syscall } from './types/syscalls';
-import { EventMatcher } from './types/event-matcher';
-import { StructDef } from './types';
+import * as process from "process";
+import { FridaSession, SessionStatus } from "./frida_session";
+import * as express from "express";
+import * as expressWs from "express-ws";
+import { Message } from "frida/dist/script";
+import * as bodyParser from "body-parser";
+import * as cors from "cors";
+import { Syscall } from "./types/syscalls";
+import { EventMatcher } from "./types/event-matcher";
+import { StructDef } from "./types";
+import * as _ from "lodash";
 
 const app = express();
 const ws = expressWs(app);
@@ -21,8 +22,8 @@ export class DapServer {
   private lastEmittedIndex: number = 0;
 
   constructor(port: number) {
-    process.on('SIGTERM', this.quit.bind(this));
-    process.on('SIGINT', this.quit.bind(this));
+    process.on("SIGTERM", this.quit.bind(this));
+    process.on("SIGINT", this.quit.bind(this));
 
     this.port = port;
     setInterval(this.emitLatestEvents.bind(this), 1000);
@@ -30,62 +31,73 @@ export class DapServer {
     app.use(bodyParser.json());
 
     // TODO: Remove CORS header once we serve the UI from the same origin as the server.
-    app.use(cors({ origin: 'http://localhost:3000' }));
+    app.use(cors({ origin: "http://localhost:3000" }));
 
     app.use((req, res, next) => {
-      if (req.headers.host !== `localhost:${this.port}` &&
-          req.headers.host !== `127.0.0.1:${this.port}`) {
-        next('DNS rebinding attack blocked');
+      if (
+        req.headers.host !== `localhost:${this.port}` &&
+        req.headers.host !== `127.0.0.1:${this.port}`
+      ) {
+        next("DNS rebinding attack blocked");
       } else {
         next();
       }
     });
 
+    app.get("/procs", async (req, resp) => {
+      const psList = require("ps-list");
+      const data = await psList();
+      resp.status(200).send(data);
+    });
+
     /*
-    # API Definition
-    GET /session/status
+         # API Definition
+         GET /session/status
 
-    # Description
-    Returns the current state of the Frida session. Poll this API after doing an `attach` or `detach`. When the status
-    is "attached", the process ID is also returned.
+         # Description
+         Returns the current state of the Frida session. Poll this API after doing an `attach` or `detach`. When the status
+         is "attached", the process ID is also returned.
 
-    # Request Body Parameters
-    N/A
+         # Request Body Parameters
+         N/A
 
-    # Response Body
-    status: string
-    pid: Integer or Undefined
-    */
-    app.get('/session/status', (req, res) => {
+         # Response Body
+         status: string
+         pid: Integer or Undefined
+       */
+    app.get("/session/status", (req, res) => {
       const out: any = {};
       if (!this.fridaSession) {
-        out.status = 'detached';
+        out.status = "detached";
       } else {
         switch (this.fridaSession.status) {
           case SessionStatus.ATTACHED:
-            out.status = 'attached';
+            out.status = "attached";
             out.pid = this.fridaSession.session.pid;
             break;
           case SessionStatus.FAILED:
-            out.status = 'failed';
+            out.status = "failed";
             out.reason = this.fridaSession.reason.message.toString();
             break;
           case SessionStatus.PENDING:
-            out.status = 'pending';
+            out.status = "pending";
             break;
           case SessionStatus.DETACHED:
-            out.status = 'detached';
+            out.status = "detached";
             break;
           default:
-            throw new Error('unknown status');
+            throw new Error("unknown status");
         }
       }
       res.send(out);
     });
 
-    app.use('/*', (req, res, next) => {
-      if (!!this.fridaSession && this.fridaSession.status === SessionStatus.PENDING) {
-        res.status(500).send('Operation pending');
+    app.use("/*", (req, res, next) => {
+      if (
+        !!this.fridaSession &&
+        this.fridaSession.status === SessionStatus.PENDING
+      ) {
+        res.status(500).send("Operation pending");
         res.end();
       } else {
         next();
@@ -105,8 +117,13 @@ export class DapServer {
     # Request Body Parameters
     target: Integer | String      - process ID or process name
     */
-    app.post('/session/attach', (req, res) => {
-      const { target, adb } = req.body;
+    app.post("/session/attach", (req, res) => {
+      let { target, adb } = req.body;
+      console.log("req", req.body);
+      if (_.isNumber(target)) {
+        console.log("here");
+        target = _.parseInt(target);
+      }
       try {
         this.attach(target, adb);
         res.send();
@@ -115,9 +132,12 @@ export class DapServer {
       }
     });
 
-    app.use('/*', (req, res, next) => {
-      if (!this.fridaSession || this.fridaSession.status !== SessionStatus.ATTACHED) {
-        res.status(500).send('Must be attached');
+    app.use("/*", (req, res, next) => {
+      if (
+        !this.fridaSession ||
+        this.fridaSession.status !== SessionStatus.ATTACHED
+      ) {
+        res.status(500).send("Must be attached");
         res.end();
       } else {
         next();
@@ -133,7 +153,7 @@ export class DapServer {
 
     Note: The result of this operation can be checked by polling /session/status.
     */
-    app.post('/session/detach', (req, res, next) => {
+    app.post("/session/detach", (req, res, next) => {
       console.log(`detaching from ${this.fridaSession.session.pid}`);
       try {
         this.detach();
@@ -153,7 +173,7 @@ export class DapServer {
     # Response Body
     index: Integer
     */
-    app.get('/last-event', (req, res) => {
+    app.get("/last-event", (req, res) => {
       res.send({ index: this.lastEmittedIndex });
     });
 
@@ -182,8 +202,8 @@ export class DapServer {
       start: Integer          - Timestamp of when the ioctl request started
       end: Integer            - Timestamp of when the ioctl request finished
     */
-    app.ws('/event-stream', (ws, req) => {
-      ws.on('message', (msg) => {
+    app.ws("/event-stream", (ws, req) => {
+      ws.on("message", msg => {
         // ws.send(msg);
       });
     });
@@ -198,8 +218,13 @@ export class DapServer {
     # Response Body
     [Event, ...]
     */
-    app.get('/events', (req, res) => {
-      res.send(this.syscallEvents.slice(this.lastEmittedIndex, this.syscallEvents.length));
+    app.get("/events", (req, res) => {
+      res.send(
+        this.syscallEvents.slice(
+          this.lastEmittedIndex,
+          this.syscallEvents.length
+        )
+      );
       this.lastEmittedIndex = this.syscallEvents.length;
     });
 
@@ -216,10 +241,10 @@ export class DapServer {
     # Response Body
     [Event]
     */
-    app.get('/events/:index', (req, res) => {
+    app.get("/events/:index", (req, res) => {
       const index = parseInt(req.params.index, 10);
       if (index < 0 || index >= this.syscallEvents.length) {
-        res.status(500).send('Invalid index');
+        res.status(500).send("Invalid index");
       } else {
         res.send(this.syscallEvents[index]);
       }
@@ -238,10 +263,10 @@ export class DapServer {
     # Response Body
     [Event, ...]
     */
-    app.get('/events/range/:begin', (req, res) => {
+    app.get("/events/range/:begin", (req, res) => {
       const begin = parseInt(req.params.begin, 10);
       if (begin < 0 || begin >= this.syscallEvents.length) {
-        res.status(500).send('Invalid range');
+        res.status(500).send("Invalid range");
       } else {
         res.send(this.syscallEvents.slice(begin, this.syscallEvents.length));
       }
@@ -261,13 +286,17 @@ export class DapServer {
     # Response Body
     [Event, ...]
     */
-    app.get('/events/range/:begin/:end', (req, res) => {
+    app.get("/events/range/:begin/:end", (req, res) => {
       const begin = parseInt(req.params.begin, 10);
       const end = parseInt(req.params.end, 10);
-      if (begin < 0 || begin >= this.syscallEvents.length ||
-          end < 0 || end >= this.syscallEvents.length ||
-          end < begin) {
-        res.status(500).send('Invalid range');
+      if (
+        begin < 0 ||
+        begin >= this.syscallEvents.length ||
+        end < 0 ||
+        end >= this.syscallEvents.length ||
+        end < begin
+      ) {
+        res.status(500).send("Invalid range");
       } else {
         res.send(this.syscallEvents.slice(begin, end));
       }
@@ -297,16 +326,21 @@ export class DapServer {
       data: Integer[] | null    - third arg of ioctl syscall; may be populated with output data from the target driver.
       retval: Integert          - return value of the ioctl syscall
     */
-    app.post('/events', (req, res, next) => {
+    app.post("/events", (req, res, next) => {
       const syscalls: Syscall[] = req.body;
-      if (!syscalls || syscalls.length === 0 || syscalls.constructor !== Array) {
-        res.status(500).send('Bad input');
+      if (
+        !syscalls ||
+        syscalls.length === 0 ||
+        syscalls.constructor !== Array
+      ) {
+        res.status(500).send("Bad input");
       } else {
-        this.fridaSession.inject(syscalls)
-          .then((results) => {
+        this.fridaSession
+          .inject(syscalls)
+          .then(results => {
             res.send(results);
           })
-          .catch((e) => {
+          .catch(e => {
             res.status(500).send(e.toString());
           });
       }
@@ -336,8 +370,9 @@ export class DapServer {
       value: String     - Value of the Event field to match on
       regex: boolean    - Value is a regular expression
     */
-    app.get('/blacklist', (req, resp) => {
-      this.fridaSession.blacklistGetAll()
+    app.get("/blacklist", (req, resp) => {
+      this.fridaSession
+        .blacklistGetAll()
         .then(result => resp.send(result))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -352,9 +387,10 @@ export class DapServer {
     # Response Body
     EventMatcher
     */
-    app.get('/blacklist/:id', (req, resp) => {
+    app.get("/blacklist/:id", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.blacklistGet(id)
+      this.fridaSession
+        .blacklistGet(id)
         .then(res => resp.send(res))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -372,9 +408,10 @@ export class DapServer {
     # Response Body
     id: Integer   - id/index of the blacklist item
     */
-    app.post('/blacklist', (req, resp) => {
+    app.post("/blacklist", (req, resp) => {
       const matcher: EventMatcher = req.body;
-      this.fridaSession.blacklistPut(matcher)
+      this.fridaSession
+        .blacklistPut(matcher)
         .then(res => resp.send({ id: res }))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -390,10 +427,11 @@ export class DapServer {
     id: Integer
     matcher: EventMatcher
     */
-    app.post('/blacklist/:id', (req, resp) => {
+    app.post("/blacklist/:id", (req, resp) => {
       const id = parseInt(req.params.id, 10);
       const matcher: EventMatcher = req.body;
-      this.fridaSession.blacklistUpdate(id, matcher)
+      this.fridaSession
+        .blacklistUpdate(id, matcher)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -409,9 +447,10 @@ export class DapServer {
     id: Integer
     */
 
-    app.post('/blacklist/:id/delete', (req, resp) => {
+    app.post("/blacklist/:id/delete", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.blacklistDelete(id)
+      this.fridaSession
+        .blacklistDelete(id)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -449,8 +488,9 @@ export class DapServer {
       parseTree: any                      - Generated when parsing a field that has a dynamic length. The parse tree is
                                             used to evaluate the expression on event data.
     */
-    app.get('/types', (req, resp) => {
-      this.fridaSession.typeGetAll()
+    app.get("/types", (req, resp) => {
+      this.fridaSession
+        .typeGetAll()
         .then(result => resp.send(result))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -468,9 +508,10 @@ export class DapServer {
     # Response Body
     TypeDef
     */
-    app.get('/types/:id', (req, resp) => {
+    app.get("/types/:id", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.typeGet(id)
+      this.fridaSession
+        .typeGet(id)
         .then(res => resp.send(res))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -488,9 +529,10 @@ export class DapServer {
     # Response Body
     id: Integer
     */
-    app.post('/types', (req, resp) => {
+    app.post("/types", (req, resp) => {
       const type: StructDef = req.body;
-      this.fridaSession.typePut(type)
+      this.fridaSession
+        .typePut(type)
         .then(res => resp.send({ id: res }))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -508,10 +550,11 @@ export class DapServer {
     # Request Body Parameters
     TypeDef
     */
-    app.post('/types/:id', (req, resp) => {
+    app.post("/types/:id", (req, resp) => {
       const id = parseInt(req.params.id, 10);
       const type: StructDef = req.body;
-      this.fridaSession.typeUpdate(id, type)
+      this.fridaSession
+        .typeUpdate(id, type)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -526,9 +569,10 @@ export class DapServer {
     # Path Parameters
     id: Integer
     */
-    app.post('/types/:id/delete', (req, resp) => {
+    app.post("/types/:id/delete", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.typeDelete(id)
+      this.fridaSession
+        .typeDelete(id)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -552,8 +596,9 @@ export class DapServer {
       matcher: Matcher
       typeId: Integer
     */
-    app.get('/typeAssignments', (req, resp) => {
-      this.fridaSession.typeAssignGetAll()
+    app.get("/typeAssignments", (req, resp) => {
+      this.fridaSession
+        .typeAssignGetAll()
         .then(result => resp.send(result))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -571,9 +616,10 @@ export class DapServer {
     # Response Body
     TypeAssignment
     */
-    app.get('/typeAssignments/:id', (req, resp) => {
+    app.get("/typeAssignments/:id", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.typeAssignGet(id)
+      this.fridaSession
+        .typeAssignGet(id)
         .then(res => resp.send(res))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -592,10 +638,11 @@ export class DapServer {
     # Response Body
     id: Integer        - ID of type assignment
     */
-    app.post('/typeAssignments', (req, resp) => {
+    app.post("/typeAssignments", (req, resp) => {
       const typeId: number = req.body.typeId;
       const matcher: EventMatcher = req.body.matcher;
-      this.fridaSession.typeAssignPut(typeId, matcher)
+      this.fridaSession
+        .typeAssignPut(typeId, matcher)
         .then(res => resp.send({ id: res }))
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -614,11 +661,12 @@ export class DapServer {
     typeId: Integer
     matcher: EventMatcher
     */
-    app.post('/typeAssignments/:id', (req, resp) => {
+    app.post("/typeAssignments/:id", (req, resp) => {
       const id: number = parseInt(req.params.id, 10);
       const typeId: number = req.body.typeId;
       const matcher: EventMatcher = req.body.matcher;
-      this.fridaSession.typeAssignUpdate(id, typeId, matcher)
+      this.fridaSession
+        .typeAssignUpdate(id, typeId, matcher)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
@@ -633,25 +681,32 @@ export class DapServer {
     # Path Parameters
     id: Integer        - ID of type assignment
     */
-    app.post('/typeAssignments/:id/delete', (req, resp) => {
+    app.post("/typeAssignments/:id/delete", (req, resp) => {
       const id = parseInt(req.params.id, 10);
-      this.fridaSession.typeDelete(id)
+      this.fridaSession
+        .typeDelete(id)
         .then(() => resp.send())
         .catch(e => resp.status(500).send(e.toString()));
     });
-
   }
   public start() {
-    this.server = app.listen(this.port, () => console.log(`started server on port ${this.port}`));
+    this.server = app.listen(this.port, () =>
+      console.log(`started server on port ${this.port}`)
+    );
   }
   public stop() {
     if (!!this.server) {
       this.server.close();
     }
   }
-  public attach(target: string|number, adb: boolean) : void  {
-    if (!!this.fridaSession && this.fridaSession.status === SessionStatus.ATTACHED) {
-      throw new Error(`Already attached to pid ${this.fridaSession.session.pid}`);
+  public attach(target: string | number, adb: boolean): void {
+    if (
+      !!this.fridaSession &&
+      this.fridaSession.status === SessionStatus.ATTACHED
+    ) {
+      throw new Error(
+        `Already attached to pid ${this.fridaSession.session.pid}`
+      );
     }
     this.fridaSession = new FridaSession(target, adb);
     this.fridaSession.attach(this.handleFridaMessage.bind(this), () => {
@@ -665,7 +720,7 @@ export class DapServer {
     }
   }
   public async quit() {
-    console.debug('quitting');
+    console.debug("quitting");
     this.detach();
     this.stop();
     process.exit(0);
@@ -674,8 +729,8 @@ export class DapServer {
     if (!message) {
       return;
     }
-    if (message.type === 'send') {
-      if (message.payload.syscall !== 'ioctl') {
+    if (message.type === "send") {
+      if (message.payload.syscall !== "ioctl") {
         return;
       }
       message.payload.id = this.currentEventId++;
@@ -700,20 +755,30 @@ export class DapServer {
         */
       }
       this.syscallEvents.push(message.payload);
-
-    } else if (message.type === 'error') {
-      console.log('error', JSON.stringify(message));
+    } else if (message.type === "error") {
+      console.log("error", JSON.stringify(message));
     } else {
-      console.log('unknown message', JSON.stringify(message));
+      console.log("unknown message", JSON.stringify(message));
     }
   }
   emitLatestEvents() {
-    if (ws.getWss().clients === 0 || !this.fridaSession || this.fridaSession.status !== SessionStatus.ATTACHED) {
+    if (
+      ws.getWss().clients === 0 ||
+      !this.fridaSession ||
+      this.fridaSession.status !== SessionStatus.ATTACHED
+    ) {
       return;
     }
     if (this.lastEmittedIndex < this.syscallEvents.length) {
-      ws.getWss().clients.forEach(async (client) => {
-        client.send(JSON.stringify(this.syscallEvents.slice(this.lastEmittedIndex, this.syscallEvents.length)));
+      ws.getWss().clients.forEach(async client => {
+        client.send(
+          JSON.stringify(
+            this.syscallEvents.slice(
+              this.lastEmittedIndex,
+              this.syscallEvents.length
+            )
+          )
+        );
       });
       this.lastEmittedIndex = this.syscallEvents.length;
     }

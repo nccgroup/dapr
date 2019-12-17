@@ -34,7 +34,8 @@ export class DupEventTable extends React.Component<DupEventTableProps, {}> {
     if (this.props.events.length === 0) {
       loading = true;
     }
-    return (
+    return <div />;
+    /*    return (
       <ReactTable
         data={this.props.events}
         columns={columns}
@@ -67,6 +68,6 @@ export class DupEventTable extends React.Component<DupEventTableProps, {}> {
           }
         }}
       />
-    );
+    );*/
   }
 }
