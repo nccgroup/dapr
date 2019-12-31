@@ -1,4 +1,6 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import * as _ from "lodash";
+import { events } from "../store/db";
 /*
    # API Definition
    GET /events/:id
@@ -12,11 +14,7 @@ import * as express from "express";
    # Response Body
    [Event]
  */
-export const getEvent = (req: express.Request, res: express.Response) => {
-  const index = parseInt(req.params.index, 10);
-  if (index < 0 || index >= this.syscallEvents.length) {
-    res.status(500).send("Invalid index");
-  } else {
-    res.send(this.syscallEvents[index]);
-  }
+export const getEvent = (req: Request, res: Response) => {
+  const index = _.parseInt(req.params.index, 10);
+  res.send(events.findOne({ id: index }));
 };

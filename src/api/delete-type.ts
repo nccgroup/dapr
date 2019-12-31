@@ -1,4 +1,5 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import { types } from "../store/db";
 /*
    # API Definition
    POST /types/:id/delete
@@ -9,10 +10,8 @@ import * as express from "express";
    # Path Parameters
    id: Integer
  */
-export const deleteType = (req: express.Request, resp: express.Response) => {
-  const id = parseInt(req.params.id, 10);
-  this.fridaSession
-    .typeDelete(id)
-    .then(() => resp.send())
-    .catch(e => resp.status(500).send(e.toString()));
+export const deleteType = (req: Request, res: Response) => {
+  const type = types.find({ id: req.params.id });
+  types.remove(type);
+  res.status(200);
 };

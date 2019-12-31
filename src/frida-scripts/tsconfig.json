@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext"],
+    "allowJs": true,
+    "noEmit": true,
+    "esModuleInterop": true
+  },
+  "include": ["ioctler.ts"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}

@@ -1,4 +1,5 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import { isStatus, SessionStatus } from "../frida-session";
 /*
    # API Definition
    POST /session/detach
@@ -8,23 +9,15 @@ import * as express from "express";
 
    Note: The result of this operation can be checked by polling /session/status.
  */
-export const sessionDetach = (
-  _: express.Request,
-  res: express.Response,
-  __: express.NextFunction
-) => {
-  console.log(`detaching from ${this.fridaSession.session.pid}`);
-  try {
-    detach();
-    res.send();
-  } catch (e) {
-    res.status(500).send(e.toString());
+export const sessionDetach = (_: Request, res: Response) => {
+  const [session, detached] = isStatus(SessionStatus.DETACHED);
+  if (session === null || detached) {
+    res.status(304).end();
+    return;
   }
-};
 
-const detach = (): void => {
-  //TODO: fix this
-  if (!!this.fridaSession) {
-    this.fridaSession.detach();
+  if (!detached) {
+    session.detach();
   }
+  res.status(200).end();
 };

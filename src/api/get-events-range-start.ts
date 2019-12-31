@@ -1,4 +1,6 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import * as _ from "lodash";
+import { events } from "../store/db";
 /*
    # API Definition
    GET /events/range/:begin
@@ -12,14 +14,7 @@ import * as express from "express";
    # Response Body
    [Event, ...]
  */
-export const getEventsRangeStart = (
-  req: express.Request,
-  res: express.Response
-) => {
-  const begin = parseInt(req.params.begin, 10);
-  if (begin < 0 || begin >= this.syscallEvents.length) {
-    res.status(500).send("Invalid range");
-  } else {
-    res.send(this.syscallEvents.slice(begin, this.syscallEvents.length));
-  }
+export const getEventsRangeStart = (req: Request, res: Response) => {
+  const begin = _.parseInt(req.params.begin, 10);
+  res.send(events.find({ id: { $gte: begin } }));
 };

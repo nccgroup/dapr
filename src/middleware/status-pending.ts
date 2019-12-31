@@ -1,19 +1,22 @@
-import * as express from "express";
-import { SessionStatus } from "./../frida_session";
+import { Request, Response, NextFunction } from "express";
+import { isStatus, SessionStatus } from "../frida-session";
 
-export const statusPending = (
-  _: express.Request,
-  res: express.Response,
-  next: express.NextFunction
+export const isStatusPending = (
+  _: Request,
+  res: Response,
+  next: NextFunction
 ) => {
-  if (
-    // TODO: fix this
-    !!this.fridaSession &&
-    this.fridaSession.status === SessionStatus.PENDING
-  ) {
-    res.status(500).send("Operation pending");
-    res.end();
-  } else {
-    next();
+  const [session, isPending] = isStatus(SessionStatus.PENDING);
+  if (session === null || isPending) {
+    res
+      .status(500)
+      .send(
+        session === null
+          ? "There is no session"
+          : "Operation currently pending. Wait until the operation is finished before calling this API again."
+      );
+    return;
   }
+
+  next();
 };

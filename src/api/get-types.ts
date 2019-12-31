@@ -1,4 +1,5 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import { types } from "../store/db";
 /*
    # API Definition
    GET /types
@@ -32,9 +33,6 @@ import * as express from "express";
    parseTree: any                      - Generated when parsing a field that has a dynamic length. The parse tree is
    used to evaluate the expression on event data.
  */
-export const getTypes = (_: express.Request, resp: express.Response) => {
-  this.fridaSession
-    .typeGetAll()
-    .then(result => resp.send(result))
-    .catch(e => resp.status(500).send(e.toString()));
+export const getTypes = (_: Request, res: Response) => {
+  res.send(types.find());
 };

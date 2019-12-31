@@ -1,5 +1,6 @@
-import * as express from "express";
-import { StructDef } from "../types";
+import { Request, Response } from "express";
+import { types } from "../store/db";
+
 /*
    # API Definition
    GET /types/:id
@@ -13,10 +14,6 @@ import { StructDef } from "../types";
    # Response Body
    TypeDef
  */
-export const getType = (req: express.Request, resp: express.Response) => {
-  const id = parseInt(req.params.id, 10);
-  this.fridaSession
-    .typeGet(id)
-    .then(res => resp.send(res))
-    .catch(e => resp.status(500).send(e.toString()));
+export const getType = (req: Request, res: Response) => {
+  res.send(types.find({ id: req.params.id }));
 };

@@ -1,19 +1,20 @@
-import * as express from "express";
-import { SessionStatus } from "./../frida_session";
+import { Request, Response, NextFunction } from "express";
+import { SessionStatus, isStatus } from "./../frida-session";
 
-export const statusAttached = (
-  _: express.Request,
-  res: express.Response,
-  next: express.NextFunction
+export const isStatusAttached = (
+  _: Request,
+  res: Response,
+  next: NextFunction
 ) => {
-  //TODO: fix this
-  if (
-    !this.fridaSession ||
-    this.fridaSession.status !== SessionStatus.ATTACHED
-  ) {
-    res.status(500).send("Must be attached");
-    res.end();
-  } else {
-    next();
+  const [session, isAttached] = isStatus(SessionStatus.ATTACHED);
+  if (session === null || !isAttached) {
+    res
+      .status(500)
+      .send(
+        "Currently, not attached to a process. Must be attached to call this API."
+      );
+    return;
   }
+
+  next();
 };

@@ -1,5 +1,5 @@
-import * as express from "express";
-import { SessionStatus } from "./../frida-session";
+import { Request, Response } from "express";
+import { SessionStatus, getFridaSession } from "./../frida-session";
 
 /*
    # API Definition
@@ -16,20 +16,26 @@ import { SessionStatus } from "./../frida-session";
    status: string
    pid: Integer or Undefined
 */
-export const sessionStatus = (req: express.Request, res: express.Response) => {
-  const out: any = {};
-  //TODO: fix this
-  if (!this.fridaSession) {
+
+interface Status {
+  status: string;
+  pid?: number;
+  reason?: string;
+}
+export const sessionStatus = (_: Request, res: Response) => {
+  let out: Status;
+  const session = getFridaSession();
+  if (session === null) {
     out.status = "detached";
   } else {
-    switch (this.fridaSession.status) {
+    switch (session.status) {
       case SessionStatus.ATTACHED:
         out.status = "attached";
-        out.pid = this.fridaSession.session.pid;
+        out.pid = session.session.pid;
         break;
       case SessionStatus.FAILED:
         out.status = "failed";
-        out.reason = this.fridaSession.reason.message.toString();
+        out.reason = session.reason.message.toString();
         break;
       case SessionStatus.PENDING:
         out.status = "pending";
@@ -38,7 +44,7 @@ export const sessionStatus = (req: express.Request, res: express.Response) => {
         out.status = "detached";
         break;
       default:
-        throw new Error("unknown status");
+        out.status = "unknown status";
     }
   }
   res.send(out);

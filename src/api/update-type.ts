@@ -1,6 +1,5 @@
 import * as express from "express";
-import { StructDef } from "../types";
-
+import { types } from "../store/db";
 /*
    # API Definition
    POST /types/:id
@@ -15,10 +14,7 @@ import { StructDef } from "../types";
    TypeDef
  */
 export const updateType = (req: express.Request, resp: express.Response) => {
-  const id = parseInt(req.params.id, 10);
-  const type: StructDef = req.body;
-  this.fridaSession
-    .typeUpdate(id, type)
-    .then(() => resp.send())
-    .catch(e => resp.status(500).send(e.toString()));
+  let type = types.find({ id: req.params.id });
+  type = req.body;
+  types.update(type);
 };

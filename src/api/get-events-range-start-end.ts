@@ -1,4 +1,6 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import * as _ from "lodash";
+import { events } from "../store/db";
 /*
    # API Definition
    GET /events
@@ -9,12 +11,10 @@ import * as express from "express";
    # Response Body
    [Event, ...]
  */
-export const getEventsRangeStartEnd = (
-  _: express.Request,
-  res: express.Response
-) => {
-  res.send(
-    this.syscallEvents.slice(this.lastEmittedIndex, this.syscallEvents.length)
-  );
-  this.lastEmittedIndex = this.syscallEvents.length;
+export const getEventsRangeStartEnd = (req: Request, res: Response) => {
+  const { begin, end } = req.params;
+  const range = events.find({
+    $and: [{ id: { $gte: begin } }, { id: { $lt: end } }]
+  });
+  res.send(range);
 };

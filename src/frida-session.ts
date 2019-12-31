@@ -5,8 +5,8 @@ import { Session } from "frida/dist/session";
 import { Script, ScriptMessageHandler, Message } from "frida/dist/script";
 import { Device } from "frida/dist/device";
 import { Syscall } from "./types/syscalls";
-import { EventMatcher } from "./types/event-matcher";
-import { StructDef } from "./types";
+import { events } from "./store/db";
+import { IoctlResponse } from "./frida-scripts/send-ioctl";
 
 export enum SessionStatus {
   DETACHED,
@@ -15,7 +15,20 @@ export enum SessionStatus {
   FAILED
 }
 
-let session: FridaSession = null;
+let session: FridaSession;
+export const isStatus = (
+  status: SessionStatus
+): [FridaSession | null, boolean] => {
+  const session = getFridaSession();
+  if (session === null) {
+    return [null, false];
+  } else if (session.status === status) {
+    return [session, true];
+  }
+
+  return [session, false];
+};
+
 export const getFridaSession = (): FridaSession | null => {
   return session;
 };
@@ -24,6 +37,10 @@ export const newFridaSession = (
   target: string | number,
   adb: boolean
 ): FridaSession => {
+  const [s, detached] = isStatus(SessionStatus.DETACHED);
+  if (s !== null && !detached) {
+    s.detach();
+  }
   session = new FridaSession(target, adb);
   return session;
 };
@@ -31,35 +48,18 @@ export const newFridaSession = (
 export const onFridaAttach = () => {};
 
 export const onFridaMessage = (message: Message, data: Buffer): void => {
-  if (!message) {
-    return;
-  }
   if (message.type === "send") {
     if (message.payload.syscall !== "ioctl") {
       return;
     }
-    message.payload.id = this.currentEventId++;
+
     if (!!data) {
       message.payload.data = JSON.parse(JSON.stringify(data)).data;
     }
     if (!message.payload.driverName) {
       message.payload.driverName = `<unknown:${message.payload.fd}>`;
-      /*
-               // TODO: This is too slow. Figure out a better way to resolve file descriptors in real-time.
-               try {
-               message.payload.driverName = this.fridaHelper.resolveFileDescriptor(message.payload.fd);
-               if (!!message.payload.driverName) {
-               await this.fridaHelper.setFD(message.payload.fd, message.payload.driverName);
-               } else {
-               message.payload.driverName = `<unknown:${message.payload.fd}>`;
-               }
-               } catch (error) {
-               message.payload.driverName = `<unknown:${message.payload.fd}>`;
-               console.log(error);
-               }
-             */
     }
-    this.syscallEvents.push(message.payload);
+    events.add(message.payload);
   } else if (message.type === "error") {
     console.log("error", JSON.stringify(message));
   } else {
@@ -68,25 +68,40 @@ export const onFridaMessage = (message: Message, data: Buffer): void => {
 };
 
 class FridaSession {
-  private isRoot: boolean = false;
-  private adb: boolean = false;
+  private isRoot: boolean;
+  private adb: boolean;
   private target: string | number;
-  public status: SessionStatus = SessionStatus.DETACHED;
-  public reason: Error = null;
-  public script: Script = null;
-  public session: Session = null;
-  public device: Device = null;
+  public status: SessionStatus;
+  public reason: Error | null;
+  public script: Script | null;
+  public session: Session | null;
+  public device: Device | null;
   constructor(targetProcess: string | number, adb: boolean) {
+    this.isRoot = false;
+    this.status = SessionStatus.DETACHED;
+    this.reason = null;
+    this.script = null;
+    this.session = null;
+    this.device = null;
     this.target = targetProcess;
     this.adb = adb;
   }
-  async getFD(fd: number): Promise<string | void> {
+  async getFD(fd: number): Promise<string | null> {
+    if (this.script === null) {
+      return null;
+    }
     return await this.script.exports.getFD(fd);
   }
-  async setFD(fd: number, path: string) {
+  async setFD(fd: number, path: string): Promise<void> {
+    if (this.script === null) {
+      return;
+    }
     return await this.script.exports.setFD(fd, path);
   }
-  async getFDs() {
+  async getFDs(): Promise<{ [key: string]: string } | null> {
+    if (this.script === null) {
+      return null;
+    }
     return await this.script.exports.getFDs();
   }
   shell(command: string[]): SpawnSyncReturns<string | Buffer> {
@@ -119,8 +134,11 @@ class FridaSession {
       }
     }
   }
-  resolveFileDescriptor(fd: number): string {
-    let readlinkResult: string = null;
+  resolveFileDescriptor(fd: number): string | null {
+    if (this.session === null) {
+      return null;
+    }
+    let readlinkResult: string;
     const command = ["readlink", `/proc/${this.session.pid}/fd/${fd}`];
     const commandResult = this.shell(command);
     if (commandResult.status === 0 && commandResult.output.length >= 2) {
@@ -130,14 +148,17 @@ class FridaSession {
     console.log(`readlink error: ${commandResult.error}`);
     return null;
   }
-  resolveFileDescriptors(): object {
+  resolveFileDescriptors(): {} | null {
     /* TODO: Attempt multiple methods of reading FDs; fall back to less precise method on each failure
      * 1. Use frida-fs to read /proc/self/fd/ (can fail due to read permissions)
      * 2. Push/run a binary that reads /proc/<pid>/fd/ (can fail on writing to filesystem)
      * 3. Use device.spawn() to `ls -l /proc/<pid>/fd/` (can fail if ls -l output not consisten)
      * 4. Use device.spawn() to `ls /proc/<pid>/fd/` and `readlink` each fd
     */
-    const files = {};
+    if (this.session === null) {
+      return null;
+    }
+    const files: { [key: string]: string } = {};
     const command = ["ls", "-l", `/proc/${this.session.pid}/fd`];
     const lsResult = this.shell(command);
     if (lsResult.status === 0 && lsResult.output.length >= 2) {
@@ -155,149 +176,106 @@ class FridaSession {
     }
     return files;
   }
-  attach(callback: ScriptMessageHandler, onAttach: Function): void {
+  async attach(
+    callback: ScriptMessageHandler,
+    onAttach: Function
+  ): Promise<void> {
     this.status = SessionStatus.PENDING;
     if (this.adb) {
-      frida
-        .getUsbDevice({ timeout: 1000 })
-        .then(device => {
-          this.device = device;
-          this.device
-            .attach(this.target)
-            .then(async session => {
-              this.session = session;
-              this.loadScript(callback, onAttach);
-            })
-            .catch(e => {
-              this.fail(e);
-            });
-        })
-        .catch(e => {
-          this.fail(e);
-        });
-    } else {
-      frida
-        .attach(this.target)
-        .then(async session => {
+      try {
+        const device = await frida.getUsbDevice({ timeout: 1000 });
+        this.device = device;
+        try {
+          const session = await this.device.attach(this.target);
           this.session = session;
           this.loadScript(callback, onAttach);
-        })
-        .catch(e => {
+        } catch (e) {
           this.fail(e);
-        });
+        }
+      } catch (e) {
+        this.fail(e);
+      }
+    } else {
+      try {
+        const session = await frida.attach(this.target);
+        this.session = session;
+        this.loadScript(callback, onAttach);
+      } catch (e) {
+        this.fail(e);
+      }
     }
   }
-  detach(): void {
-    if (!this.session) {
+  async detach(): Promise<void> {
+    if (this.session === null) {
       this.status = SessionStatus.DETACHED;
       if (!!this.script) {
         throw new Error("Bad state");
       }
-    } else {
-      this.status = SessionStatus.PENDING;
-      this.script.message.disconnect(() => {});
-      this.script
-        .unload()
-        .then(() => {
-          this.script = null;
-          console.debug("[FridaSession] unloaded script");
-          if (!!this.session) {
-            this.session
-              .detach()
-              .then(() => {
-                this.session = null;
-                this.status = SessionStatus.DETACHED;
-                console.debug("[FridaSession] detached session");
-              })
-              .catch(e => {
-                this.fail(e);
-              });
-          }
-        })
-        .catch(e => {
+      return;
+    }
+    this.status = SessionStatus.PENDING;
+    if (this.script === null) {
+      return;
+    }
+    this.script.message.disconnect(() => {});
+    try {
+      await this.script.unload();
+      this.script = null;
+      console.debug("[FridaSession] unloaded script");
+      if (!!this.session) {
+        try {
+          await this.session.detach();
+          this.session = null;
+          this.status = SessionStatus.DETACHED;
+          console.debug("[FridaSession] detached session");
+        } catch (e) {
           this.fail(e);
-        });
+        }
+      }
+    } catch (e) {
+      this.fail(e);
     }
   }
-  async inject(syscalls: Syscall[]) {
-    return await this.script.exports.inject(syscalls);
-  }
-  async blacklistGetAll() {
-    return await this.script.exports.blacklistGetAll();
-  }
-  async blacklistGet(index: number) {
-    return await this.script.exports.blacklistGet(index);
-  }
-  async blacklistPut(matcher: EventMatcher) {
-    return await this.script.exports.blacklistPut(matcher);
-  }
-  async blacklistUpdate(index: number, matcher: EventMatcher) {
-    return await this.script.exports.blacklistUpdate(index, matcher);
-  }
-  async blacklistDelete(index: number) {
-    return await this.script.exports.blacklistDelete(index);
+  async send(syscalls: Syscall[]): Promise<IoctlResponse[] | null> {
+    if (this.script === null) {
+      return null;
+    }
+
+    return await this.script.exports.send(syscalls);
   }
 
-  async typeGetAll() {
-    return await this.script.exports.typeGetAll();
-  }
-  async typeGet(index: number) {
-    return await this.script.exports.typeGet(index);
-  }
-  async typePut(type: StructDef) {
-    return await this.script.exports.typePut(type);
-  }
-  async typeUpdate(index: number, type: StructDef) {
-    return await this.script.exports.typeUpdate(index, type);
-  }
-  async typeDelete(index: number) {
-    return await this.script.exports.typeDelete(index);
-  }
+  private async loadScript(
+    callback: ScriptMessageHandler,
+    onAttach: Function
+  ): Promise<void> {
+    if (this.session === null) {
+      return;
+    }
 
-  async typeAssignGetAll() {
-    return await this.script.exports.typeAssignGetAll();
-  }
-  async typeAssignGet(index: number) {
-    return await this.script.exports.typeAssignGet(index);
-  }
-  async typeAssignPut(typeId: number, matcher: EventMatcher) {
-    return await this.script.exports.typeAssignPut(typeId, matcher);
-  }
-  async typeAssignUpdate(index: number, typeId: number, matcher: EventMatcher) {
-    return await this.script.exports.typeAssignUpdate(index, typeId, matcher);
-  }
-  async typeAssignDelete(index: number) {
-    return await this.script.exports.typeAssignDelete(index);
-  }
-
-  private loadScript(callback: ScriptMessageHandler, onAttach: Function): void {
-    // await this.session.enableJit();
     const scriptPath = "./bin/ioctler.js";
     let scriptContents;
     try {
       scriptContents = fs.readFileSync(scriptPath, "utf8");
-      this.session
-        .createScript(scriptContents)
-        .then(script => {
-          this.script = script;
-          script.message.connect(callback);
-          script.load().then(() => {
-            this.detectIsRoot();
-            const files = this.resolveFileDescriptors();
-            script.exports
-              .init(files)
-              .then(() => {
-                this.status = SessionStatus.ATTACHED;
-                onAttach();
-              })
-              .catch(e => {
-                this.fail(e);
-              });
-          });
-        })
-        .catch(e => {
+      try {
+        const script = await this.session.createScript(scriptContents);
+        this.script = script;
+        script.message.connect(callback);
+        await script.load();
+        this.detectIsRoot();
+        const files = this.resolveFileDescriptors();
+        if (files === null) {
+          return;
+        }
+        try {
+          await script.exports.init(files);
+          this.status = SessionStatus.ATTACHED;
+          onAttach();
+        } catch (e) {
           this.fail(e);
-        });
+        }
+      } catch (e) {
+        this.fail(e);
+      }
     } catch (e) {
       this.fail(e);
     }
@@ -305,6 +283,10 @@ class FridaSession {
   private fail(e: Error) {
     this.status = SessionStatus.FAILED;
     this.reason = e;
+    if (!e.stack) {
+      return;
+    }
+
     console.error(e.stack.toString());
   }
 }

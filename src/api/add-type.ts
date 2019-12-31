@@ -1,5 +1,5 @@
-import * as express from "express";
-import { StructDef } from "../types";
+import { Request, Response } from "express";
+import { types } from "../store/db";
 /*
    # API Definition
    POST /types
@@ -13,10 +13,7 @@ import { StructDef } from "../types";
    # Response Body
    id: Integer
  */
-export const addType = (req: express.Request, resp: express.Response) => {
-  const type: StructDef = req.body;
-  this.fridaSession
-    .typePut(type)
-    .then(res => resp.send({ id: res }))
-    .catch(e => resp.status(500).send(e.toString()));
+export const addType = (req: Request, res: Response) => {
+  types.insert(req.body);
+  res.status(200);
 };

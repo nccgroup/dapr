@@ -1,5 +1,7 @@
-import * as express from "express";
+import { Request, Response } from "express";
 import { Syscall } from "../types/syscalls";
+import { getFridaSession } from "../frida-session";
+
 /*
    # API Definition
    POST /events
@@ -24,23 +26,22 @@ import { Syscall } from "../types/syscalls";
    data: Integer[] | null    - third arg of ioctl syscall; may be populated with output data from the target driver.
    retval: Integert          - return value of the ioctl syscall
  */
-export const addEvent = (
-  req: express.Request,
-  res: express.Response,
-  _: express.NextFunction
-) => {
+export const addEvent = async (req: Request, res: Response) => {
   const syscalls: Syscall[] = req.body;
   if (!syscalls || syscalls.length === 0 || syscalls.constructor !== Array) {
     res.status(500).send("Bad input");
-  } else {
-    //TODO: fix this
-    this.fridaSession
-      .inject(syscalls)
-      .then(results => {
-        res.send(results);
-      })
-      .catch(e => {
-        res.status(500).send(e.toString());
-      });
+    return;
+  }
+  const session = getFridaSession();
+  if (session === null) {
+    res.status(500).end();
+    return;
+  }
+
+  try {
+    const results = await session.inject(syscalls);
+    res.send(results);
+  } catch (e) {
+    res.status(500).send(e.toString());
   }
 };

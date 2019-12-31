@@ -1,4 +1,5 @@
-import * as express from "express";
+import { Request } from "express";
+import { setWebsocket } from "../websocket";
 import * as ws from "ws";
 /*
    # API Definition
@@ -26,8 +27,7 @@ import * as ws from "ws";
    end: Integer            - Timestamp of when the ioctl request finished
  */
 
-export const websocket = (ws: ws, req: express.Request) => {
-  ws.on("message", msg => {
-    // ws.send(msg);
-  });
+export const wsHandler = (ws: ws, _: Request) => {
+  const websocket = setWebsocket(ws);
+  websocket.on("message", (_: ws.Data) => {});
 };

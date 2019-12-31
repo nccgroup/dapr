@@ -1,4 +1,6 @@
-import * as express from "express";
+import { Request, Response } from "express";
+import { events } from "../store/db";
+
 /*
    # API Definition
    GET /events
@@ -7,9 +9,6 @@ import * as express from "express";
    # Response Body
    [Event, ...]
  */
-export const getEvents = (_: express.Request, res: express.Response) => {
-  res.send(
-    this.syscallEvents.slice(this.lastEmittedIndex, this.syscallEvents.length)
-  );
-  this.lastEmittedIndex = this.syscallEvents.length;
+export const getEvents = (_: Request, res: Response) => {
+  res.send(events.find());
 };

@@ -10,7 +10,8 @@ export const dnsRebinding = (
     req.headers.host !== `127.0.0.1:${this.port}`
   ) {
     next("DNS rebinding attack blocked");
-  } else {
-    next();
+    return;
   }
+
+  next();
 };

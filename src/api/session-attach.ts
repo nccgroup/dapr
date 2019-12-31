@@ -1,7 +1,7 @@
-import * as express from "express";
+import { Request, Response } from "express";
 import * as _ from "lodash";
 import {
-  getFridaSession,
+  isStatus,
   newFridaSession,
   SessionStatus,
   onFridaMessage,
@@ -19,19 +19,18 @@ import {
 
    target: Integer | String      - process ID or process name
  */
-export const sessionAttach = (req: express.Request, res: express.Response) => {
+export const sessionAttach = (req: Request, res: Response) => {
   let { target, adb } = req.body;
 
-  let session = getFridaSession();
+  let [session, isAttached] = isStatus(SessionStatus.ATTACHED);
+
   if (session === null) {
     session = newFridaSession(target, adb);
-  } else {
-    if (session.status === SessionStatus.ATTACHED) {
-      res.status(500).send(`Already attached to pid ${target}`);
-      return;
-    }
+  } else if (isAttached) {
+    res.status(500).send(`Already attached to ${target}`);
+    return;
   }
 
   session.attach(onFridaMessage, onFridaAttach);
-  res.send();
+  res.status(200).end();
 };

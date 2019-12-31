@@ -1,4 +1,4 @@
-import * as express from "express";
+import { Request, Response } from "express";
 
 /*
    # API Definition
@@ -24,7 +24,7 @@ import * as express from "express";
    value: String     - Value of the Event field to match on
    regex: boolean    - Value is a regular expression
  */
-export const getBlacklists = (_: express.Request, resp: express.Response) => {
+export const getBlacklists = (_: Request, resp: Response) => {
   this.fridaSession
     .blacklistGetAll()
     .then(result => resp.send(result))
