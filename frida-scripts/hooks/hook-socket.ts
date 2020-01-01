@@ -1,7 +1,8 @@
-import { SocketEvent } from "../../../shared/types/socket-event";
-import { SyscallType } from "../../../shared/types/syscalls";
-export const hookSocket = (libcModuleName: string, files: {}) => {
-  Interceptor.attach(Module.findExportByName(libcModuleName, "socket"), {
+import { SocketEvent } from "../../shared/types/socket-event";
+import { SyscallType } from "../../shared/types/syscalls";
+import { hook } from "./hook";
+export const hookSocket = (libcModule: Module) => {
+  hook(libcModule, "socket", {
     onEnter: args => {
       this.start = new Date().getTime();
       this.domain = parseInt(args[0].toString());
@@ -11,10 +12,7 @@ export const hookSocket = (libcModuleName: string, files: {}) => {
     },
     onLeave: retval => {
       const ret = parseInt(retval.toString());
-      if (ret >= 0) {
-        files[ret] =
-          "socket:" + this.domain + ":" + this.type + ":" + this.protocol;
-      }
+
       const event: SocketEvent = {
         syscall: SyscallType.SOCKET,
         domain: this.domain,

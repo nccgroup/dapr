@@ -7,7 +7,7 @@ export interface IoctlEvent {
   mode: Mode;
   size: number;
   opcode: number;
-  request: number;
+  request: string;
   retval: number;
   start: number;
   end: number;

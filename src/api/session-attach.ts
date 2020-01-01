@@ -21,16 +21,13 @@ import {
  */
 export const sessionAttach = (req: Request, res: Response) => {
   let { target, adb } = req.body;
-
   let [session, isAttached] = isStatus(SessionStatus.ATTACHED);
-
   if (session === null) {
     session = newFridaSession(target, adb);
   } else if (isAttached) {
     res.status(500).send(`Already attached to ${target}`);
     return;
   }
-
   session.attach(onFridaMessage, onFridaAttach);
   res.status(200).end();
 };

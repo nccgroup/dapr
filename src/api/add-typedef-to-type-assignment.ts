@@ -1,5 +1,5 @@
-import * as express from "express";
-import { EventMatcher } from "../types/event-matcher";
+//import * as express from "express";
+//import { EventMatcher } from "../types/event-matcher";
 /*
    # API Definition
    POST /typesAssignments
@@ -14,6 +14,7 @@ import { EventMatcher } from "../types/event-matcher";
    # Response Body
    id: Integer        - ID of type assignment
  */
+/*
 export const addTypedefToTypeAssignment = (
   req: express.Request,
   resp: express.Response
@@ -25,3 +26,4 @@ export const addTypedefToTypeAssignment = (
     .then(res => resp.send({ id: res }))
     .catch(e => resp.status(500).send(e.toString()));
 };
+*/

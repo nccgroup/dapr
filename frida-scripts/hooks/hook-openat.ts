@@ -1,18 +1,19 @@
-import { OpenEvent } from "../../../shared/types/open-event";
-import { SyscallType } from "../../../shared/types/syscalls";
-export const hookOpen = (libcModuleName: string, files: {}) => {
-  Interceptor.attach(Module.findExportByName(libcModuleName, "open"), {
+import { OpenEvent } from "../../shared/types/open-event";
+import { Mode } from "../../shared/types/mode";
+import { first } from "lodash";
+import { SyscallType } from "../../shared/types/syscalls";
+import { hook } from "./hook";
+export const hookOpenAt = (libcModule: Module) => {
+  hook(libcModule, "openat", {
     onEnter: args => {
       this.start = new Date().getTime();
-      this.driverName = args[0].readCString();
-      this.mode = args[1];
+      this.driverName = "openat:" + first(args).readCString();
+      this.mode = Mode.READ; // HACK
       return 0;
     },
     onLeave: retval => {
       const ret = parseInt(retval.toString());
-      if (ret >= 0) {
-        files[ret] = this.driverName;
-      }
+
       const event: OpenEvent = {
         syscall: SyscallType.OPEN,
         driverName: this.driverName,

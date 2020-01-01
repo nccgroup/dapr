@@ -10,11 +10,10 @@
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es6",
     "typeRoots": ["node_modules/@types"],
-    "lib": ["es2015", "dom"],
-    "strict": true
+    "target": "es2018",
+    "lib": ["esnext"]
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["./node_modules/*", "./ui/*", "**/*.spec.ts", "frida-scripts"]
 }

@@ -16,7 +16,7 @@ export const sendIoctl = (
   request: number,
   data: ArrayBuffer
 ): IoctlResponse => {
-  let _data: NativePointer;
+  let _data: NativePointer | null;
 
   if (!!data) {
     _data = Memory.alloc(data.byteLength);

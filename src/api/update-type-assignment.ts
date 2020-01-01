@@ -1,5 +1,5 @@
-import * as express from "express";
-import { EventMatcher } from "../types/event-matcher";
+//import * as express from "express";
+//import { EventMatcher } from "../types/event-matcher";
 
 /*
    # API Definition
@@ -15,7 +15,7 @@ import { EventMatcher } from "../types/event-matcher";
    typeId: Integer
    matcher: EventMatcher
  */
-export const updateTypeAssignment = (
+/*export const updateTypeAssignment = (
   req: express.Request,
   resp: express.Response
 ) => {
@@ -27,3 +27,4 @@ export const updateTypeAssignment = (
     .then(() => resp.send())
     .catch(e => resp.status(500).send(e.toString()));
 };
+*/

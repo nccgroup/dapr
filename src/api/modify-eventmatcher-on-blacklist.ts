@@ -1,5 +1,5 @@
-import * as express from "express";
-import { EventMatcher } from "../types/event-matcher";
+//import * as express from "express";
+//import { EventMatcher } from "../types/event-matcher";
 
 /*
    # API Definition
@@ -12,7 +12,7 @@ import { EventMatcher } from "../types/event-matcher";
    id: Integer
    matcher: EventMatcher
  */
-export const modifyEventMatcherToBlacklist = (
+/*export const modifyEventMatcherToBlacklist = (
   req: express.Request,
   resp: express.Response
 ) => {
@@ -23,3 +23,4 @@ export const modifyEventMatcherToBlacklist = (
     .then(() => resp.send())
     .catch(e => resp.status(500).send(e.toString()));
 };
+*/

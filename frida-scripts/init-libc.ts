@@ -1,4 +1,4 @@
-import { map, filter } from "lodash";
+import { filter } from "lodash";
 import { hookIoctl } from "./hooks/hook-ioctl";
 import { hookClose } from "./hooks/hook-close";
 import { hookOpen } from "./hooks/hook-open";
@@ -6,23 +6,18 @@ import { hookOpenAt } from "./hooks/hook-openat";
 import { hookSocket } from "./hooks/hook-socket";
 import { hookOpenGeneric } from "./hooks/hook-open-generic";
 
-export const getLibcModuleNames = (): string[] =>
-  filter(
-    map(Process.enumerateModules(), m => {
-      if (m.name.match(/^libc[\.\-]/).length > 0) {
-        return m.name;
-      }
-      return "";
-    }),
-    m => m !== ""
-  );
+export const getLibcModules = (): Module[] =>
+  filter(Process.enumerateModules(), (m: Module): boolean => {
+    const matches = m.name.match(/^libc[\.\-]/);
+    return matches && matches.length > 0;
+  });
 
-export const installHooks = (module: string, files: {}) => {
-  hookIoctl(module, files);
-  hookClose(module, files);
-  hookOpen(module, files);
-  hookOpenAt(module, files);
-  hookSocket(module, files);
+export const installHooks = (module: Module) => {
+  hookIoctl(module);
+  hookClose(module);
+  hookOpen(module);
+  hookOpenAt(module);
+  hookSocket(module);
   hookOpenGeneric(module, "dup");
   hookOpenGeneric(module, "dup2");
   hookOpenGeneric(module, "dup3");

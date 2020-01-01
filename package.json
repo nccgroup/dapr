@@ -9,7 +9,8 @@
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "express-ws": "^4.0.0",
-    "frida": "^12.8.1",
+    "frida": "^12.7.4",
+    "frida-compile": "^9.1.0",
     "int64-buffer": "^0.99.1007",
     "lokijs": "^1.5.8",
     "ps-list": "^6.3.0"
@@ -22,23 +23,22 @@
     "@types/lokijs": "^1.5.2",
     "@types/node": "^10.14.19",
     "concurrently": "^4.1.2",
-    "frida-compile": "^9.1.0",
     "source-map-support": "^0.5.9",
     "supervisor": "^0.12.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.7.4"
   },
   "bin": {
-    "dap": "bin/index.js"
+    "dap": "bin/src/index.js"
   },
   "scripts": {
     "start": "npx concurrently 'npm run watch-*' 'npm run dap'",
     "rm": "npx concurrently 'npm run clean-*'",
     "clean-dapr": "rm -rf node_modules/ package-lock.json",
     "clean-ui": "rm -rf ui/node_modules/ ui/package-lock.json",
-    "watch-frida": "cd src/frida-scripts/ && npx frida-compile ioctler.ts -o ../../bin/ioctler.js -w",
+    "watch-frida":
+      "cd frida-scripts/ && npx frida-compile index.ts -o ../bin/ioctler.js -w",
     "watch-app": "npx tsc",
     "watch-ui": "cd ui && npm run start",
-    "dap": "supervisor -w bin  bin/index.js",
-    "dapd": "node inspect --require source-map-support/register bin/index.js"
+    "dap": "supervisor -w bin  bin/src/index.js"
   }
 }

@@ -4,9 +4,10 @@ import * as frida from "frida";
 import { Session } from "frida/dist/session";
 import { Script, ScriptMessageHandler, Message } from "frida/dist/script";
 import { Device } from "frida/dist/device";
-import { Syscall } from "./types/syscalls";
+import { Syscall, SyscallType } from "../shared/types/syscalls";
 import { events } from "./store/db";
-import { IoctlResponse } from "./frida-scripts/send-ioctl";
+import { IoctlResponse } from "../frida-scripts/send-ioctl";
+import { reduce } from "lodash";
 
 export enum SessionStatus {
   DETACHED,
@@ -20,7 +21,7 @@ export const isStatus = (
   status: SessionStatus
 ): [FridaSession | null, boolean] => {
   const session = getFridaSession();
-  if (session === null) {
+  if (!session) {
     return [null, false];
   } else if (session.status === status) {
     return [session, true];
@@ -47,9 +48,13 @@ export const newFridaSession = (
 
 export const onFridaAttach = () => {};
 
-export const onFridaMessage = (message: Message, data: Buffer): void => {
+export const onFridaMessage: ScriptMessageHandler = (
+  message: Message,
+  data: Buffer | null
+): void => {
+  console.log("here?", JSON.stringify(message));
   if (message.type === "send") {
-    if (message.payload.syscall !== "ioctl") {
+    if (message.payload.syscall !== SyscallType.IOCTL) {
       return;
     }
 
@@ -59,7 +64,7 @@ export const onFridaMessage = (message: Message, data: Buffer): void => {
     if (!message.payload.driverName) {
       message.payload.driverName = `<unknown:${message.payload.fd}>`;
     }
-    events.add(message.payload);
+    events.insert(message.payload);
   } else if (message.type === "error") {
     console.log("error", JSON.stringify(message));
   } else {
@@ -86,24 +91,7 @@ class FridaSession {
     this.target = targetProcess;
     this.adb = adb;
   }
-  async getFD(fd: number): Promise<string | null> {
-    if (this.script === null) {
-      return null;
-    }
-    return await this.script.exports.getFD(fd);
-  }
-  async setFD(fd: number, path: string): Promise<void> {
-    if (this.script === null) {
-      return;
-    }
-    return await this.script.exports.setFD(fd, path);
-  }
-  async getFDs(): Promise<{ [key: string]: string } | null> {
-    if (this.script === null) {
-      return null;
-    }
-    return await this.script.exports.getFDs();
-  }
+
   shell(command: string[]): SpawnSyncReturns<string | Buffer> {
     if (this.adb) {
       return this.adbShell(command);
@@ -158,23 +146,25 @@ class FridaSession {
     if (this.session === null) {
       return null;
     }
-    const files: { [key: string]: string } = {};
+
     const command = ["ls", "-l", `/proc/${this.session.pid}/fd`];
     const lsResult = this.shell(command);
     if (lsResult.status === 0 && lsResult.output.length >= 2) {
-      for (const line of lsResult.output[1].toString().split("\r\n")) {
-        const matchResult = line.match(/([0-9]+) -> (.*)$/);
-        if (!!matchResult) {
-          const fd = matchResult[1];
-          const path = matchResult[2];
-          files[fd] = path;
-          console.log(`fd:${fd} path:${path}`);
-        }
-      }
-    } else {
-      throw "failed to list fd directory";
+      return reduce(
+        lsResult.output[1].toString().split("\n"),
+        (accum: { [key: string]: string }, curr: string) => {
+          const matchResult = curr.match(/([0-9]+) -> (.*)$/);
+          if (!!matchResult) {
+            const fd = matchResult[1];
+            const path = matchResult[2];
+            accum[fd] = path;
+          }
+          return accum;
+        },
+        {}
+      );
     }
-    return files;
+    return [];
   }
   async attach(
     callback: ScriptMessageHandler,
@@ -253,21 +243,17 @@ class FridaSession {
     }
 
     const scriptPath = "./bin/ioctler.js";
-    let scriptContents;
     try {
-      scriptContents = fs.readFileSync(scriptPath, "utf8");
+      const scriptContents = fs.readFileSync(scriptPath, "utf8");
       try {
         const script = await this.session.createScript(scriptContents);
         this.script = script;
         script.message.connect(callback);
         await script.load();
         this.detectIsRoot();
-        const files = this.resolveFileDescriptors();
-        if (files === null) {
-          return;
-        }
+
         try {
-          await script.exports.init(files);
+          await script.exports.hook();
           this.status = SessionStatus.ATTACHED;
           onAttach();
         } catch (e) {

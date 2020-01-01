@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { Syscall } from "../types/syscalls";
+import { Syscall } from "../../shared/types/syscalls";
 import { getFridaSession } from "../frida-session";
 
 /*
@@ -28,10 +28,6 @@ import { getFridaSession } from "../frida-session";
  */
 export const addEvent = async (req: Request, res: Response) => {
   const syscalls: Syscall[] = req.body;
-  if (!syscalls || syscalls.length === 0 || syscalls.constructor !== Array) {
-    res.status(500).send("Bad input");
-    return;
-  }
   const session = getFridaSession();
   if (session === null) {
     res.status(500).end();
@@ -39,7 +35,7 @@ export const addEvent = async (req: Request, res: Response) => {
   }
 
   try {
-    const results = await session.inject(syscalls);
+    const results = await session.send(syscalls);
     res.send(results);
   } catch (e) {
     res.status(500).send(e.toString());
