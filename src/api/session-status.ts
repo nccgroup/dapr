@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
-import { SessionStatus, getFridaSession } from "./../frida-session";
+//import { Request, Response } from "express";
+//import { SessionStatus, getFridaSession } from "./../frida-session";
 
 /*
    # API Definition
@@ -16,7 +16,7 @@ import { SessionStatus, getFridaSession } from "./../frida-session";
    status: string
    pid: Integer or Undefined
 */
-
+/*
 interface Status {
   status: string;
   pid?: number;
@@ -49,3 +49,4 @@ export const sessionStatus = (_: Request, res: Response) => {
   }
   res.send(out);
 };
+*/

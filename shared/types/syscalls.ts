@@ -6,6 +6,7 @@ export enum SyscallType {
 }
 
 export interface Syscall {
+  type: string;
   syscall: SyscallType;
   fd: number;
   request: number;

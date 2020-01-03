@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import * as program from "commander";
-import { app, quit } from "./server";
+import { start, quit } from "./server";
 import * as process from "process";
 const DEFAULT_PORT = 8888;
 
@@ -12,8 +12,6 @@ program
   .option("-p, --port <port>", "Set the port to listen on", DEFAULT_PORT)
   .parse(process.argv);
 
-const server = app.listen(program.port, () =>
-  console.log(`started on port ${program.port}`)
-);
+const server = start(program.port)
 process.on("SIGTERM", () => quit(server));
 process.on("SIGINT", () => quit(server));

@@ -1,29 +1,28 @@
-import { OpenEvent } from "../../shared/types/open-event";
 import { Mode } from "../../shared/types/mode";
-import { first } from "lodash";
 import { SyscallType } from "../../shared/types/syscalls";
 import { hook } from "./hook";
 export const hookOpenAt = (libcModule: Module) => {
   hook(libcModule, "openat", {
-    onEnter: args => {
+    onEnter: function(
+      this: InvocationContext,
+      args: InvocationArguments
+    ): void {
       this.start = new Date().getTime();
-      this.driverName = "openat:" + first(args).readCString();
+      this.driverName = "openat:" + args[0].readCString();
       this.mode = Mode.READ; // HACK
-      return 0;
     },
-    onLeave: retval => {
-      const ret = parseInt(retval.toString());
-
-      const event: OpenEvent = {
+    onLeave: function(
+      this: InvocationContext,
+      retval: InvocationReturnValue
+    ): void {
+      send({
         syscall: SyscallType.OPEN,
         driverName: this.driverName,
         mode: this.mode,
-        retval: ret,
+        retval: retval.toInt32(),
         start: this.start,
         end: new Date().getTime()
-      };
-      send(event);
-      return retval;
+      });
     }
   });
 };

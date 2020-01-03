@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { isStatus, SessionStatus } from "../frida-session";
+import { getFridaSession, uninstall } from "../frida-session";
+
 /*
    # API Definition
    POST /session/detach
@@ -9,15 +10,13 @@ import { isStatus, SessionStatus } from "../frida-session";
 
    Note: The result of this operation can be checked by polling /session/status.
  */
-export const sessionDetach = (_: Request, res: Response) => {
-  const [session, detached] = isStatus(SessionStatus.DETACHED);
-  if (session === null || detached) {
+export const sessionUninstall = async (req: Request, res: Response) => {
+  const { pid } = req.body;
+  const installation = getFridaSession(req.user, pid);
+  if (installation === null) {
     res.status(304).end();
     return;
   }
-
-  if (!detached) {
-    session.detach();
-  }
+  await uninstall(installation);
   res.status(200).end();
 };

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+/*import { Request, Response, NextFunction } from "express";
 import { isStatus, SessionStatus } from "../frida-session";
 
 export const isStatusPending = (
@@ -20,3 +20,4 @@ export const isStatusPending = (
 
   next();
 };
+*/

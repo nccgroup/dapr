@@ -1,278 +1,92 @@
 import * as fs from "fs";
-import { spawnSync, SpawnSyncReturns } from "child_process";
+
 import * as frida from "frida";
 import { Session } from "frida/dist/session";
-import { Script, ScriptMessageHandler, Message } from "frida/dist/script";
-import { Device } from "frida/dist/device";
-import { Syscall, SyscallType } from "../shared/types/syscalls";
-import { events } from "./store/db";
-import { IoctlResponse } from "../frida-scripts/send-ioctl";
-import { reduce } from "lodash";
+import { Script, ScriptMessageHandler } from "frida/dist/script";
+import { defaultTo, memoize, map } from "lodash";
+import { User } from "../shared/types/user";
 
-export enum SessionStatus {
-  DETACHED,
-  ATTACHED,
-  PENDING,
-  FAILED
+interface Installation {
+  session: Session;
+  script: Script;
 }
 
-let session: FridaSession;
-export const isStatus = (
-  status: SessionStatus
-): [FridaSession | null, boolean] => {
-  const session = getFridaSession();
-  if (!session) {
-    return [null, false];
-  } else if (session.status === status) {
-    return [session, true];
-  }
+const sessions: { [key: string]: Installation } = {};
 
-  return [session, false];
-};
+export const getFridaSessions = (): Installation[] => Object.values(sessions);
 
-export const getFridaSession = (): FridaSession | null => {
-  return session;
-};
+// getFridaSession returns the frida session associated with the user and pid.
+export const getFridaSession = (user: User, pid: number): Installation | null =>
+  defaultTo(sessions[`${user.name}:${pid}`], null);
 
-export const newFridaSession = (
-  target: string | number,
-  adb: boolean
-): FridaSession => {
-  const [s, detached] = isStatus(SessionStatus.DETACHED);
-  if (s !== null && !detached) {
-    s.detach();
-  }
-  session = new FridaSession(target, adb);
-  return session;
-};
-
-export const onFridaAttach = () => {};
-
-export const onFridaMessage: ScriptMessageHandler = (
-  message: Message,
-  data: Buffer | null
-): void => {
-  console.log("here?", JSON.stringify(message));
-  if (message.type === "send") {
-    if (message.payload.syscall !== SyscallType.IOCTL) {
-      return;
-    }
-
-    if (!!data) {
-      message.payload.data = JSON.parse(JSON.stringify(data)).data;
-    }
-    if (!message.payload.driverName) {
-      message.payload.driverName = `<unknown:${message.payload.fd}>`;
-    }
-    events.insert(message.payload);
-  } else if (message.type === "error") {
-    console.log("error", JSON.stringify(message));
-  } else {
-    console.log("unknown message", JSON.stringify(message));
-  }
-};
-
-class FridaSession {
-  private isRoot: boolean;
-  private adb: boolean;
-  private target: string | number;
-  public status: SessionStatus;
-  public reason: Error | null;
-  public script: Script | null;
-  public session: Session | null;
-  public device: Device | null;
-  constructor(targetProcess: string | number, adb: boolean) {
-    this.isRoot = false;
-    this.status = SessionStatus.DETACHED;
-    this.reason = null;
-    this.script = null;
-    this.session = null;
-    this.device = null;
-    this.target = targetProcess;
-    this.adb = adb;
-  }
-
-  shell(command: string[]): SpawnSyncReturns<string | Buffer> {
-    if (this.adb) {
-      return this.adbShell(command);
-    }
-    const args = command.length === 1 ? [] : command.slice(1, command.length);
-    return spawnSync(command[0], args);
-  }
-  adbShell(command: string[]): SpawnSyncReturns<string | Buffer> {
-    const args = ["shell"];
-    if (this.isRoot) {
-      args.push("su");
-      args.push("-c");
-    }
-    for (const arg in command) {
-      args.push(command[arg]);
-    }
-    return spawnSync("adb", args);
-  }
-  private detectIsRoot(): void {
-    this.isRoot = false;
-    const commandResult = this.shell(["id"]);
-    if (commandResult.status === 0) {
-      if (
-        commandResult.output[1].toString().search("uid=0") < 0 &&
-        commandResult.output[1].toString().search("(root)") < 0
-      ) {
-        this.isRoot = true;
+// getFridaScript reads the contents of the frida script
+// and returns it as a string.
+const getFridaScript = async (): Promise<string | null> => {
+  const scriptPath = "./bin/ioctler.js";
+  return await new Promise(res =>
+    fs.readFile(
+      scriptPath,
+      "utf8",
+      (err: NodeJS.ErrnoException, data: string) => {
+        if (err !== null) {
+          res(null);
+        }
+        res(data);
       }
-    }
-  }
-  resolveFileDescriptor(fd: number): string | null {
-    if (this.session === null) {
-      return null;
-    }
-    let readlinkResult: string;
-    const command = ["readlink", `/proc/${this.session.pid}/fd/${fd}`];
-    const commandResult = this.shell(command);
-    if (commandResult.status === 0 && commandResult.output.length >= 2) {
-      readlinkResult = commandResult.output[1].toString().trim();
-      return readlinkResult;
-    }
-    console.log(`readlink error: ${commandResult.error}`);
+    )
+  );
+};
+
+// loadScript creates the RPC script that is used to collect
+// information about the process syscalls.
+const loadScript = async (
+  session: Session,
+  callback: ScriptMessageHandler,
+  onAttach: Function
+): Promise<Script | null> => {
+  const scriptContents = await memoGetFridaScript();
+  if (scriptContents === null) {
     return null;
   }
-  resolveFileDescriptors(): {} | null {
-    /* TODO: Attempt multiple methods of reading FDs; fall back to less precise method on each failure
-     * 1. Use frida-fs to read /proc/self/fd/ (can fail due to read permissions)
-     * 2. Push/run a binary that reads /proc/<pid>/fd/ (can fail on writing to filesystem)
-     * 3. Use device.spawn() to `ls -l /proc/<pid>/fd/` (can fail if ls -l output not consisten)
-     * 4. Use device.spawn() to `ls /proc/<pid>/fd/` and `readlink` each fd
-    */
-    if (this.session === null) {
-      return null;
-    }
+  const script = await session.createScript(scriptContents);
+  script.message.connect(callback);
+  await script.load();
+  await script.exports.hook();
+  onAttach();
+  return script;
+};
 
-    const command = ["ls", "-l", `/proc/${this.session.pid}/fd`];
-    const lsResult = this.shell(command);
-    if (lsResult.status === 0 && lsResult.output.length >= 2) {
-      return reduce(
-        lsResult.output[1].toString().split("\n"),
-        (accum: { [key: string]: string }, curr: string) => {
-          const matchResult = curr.match(/([0-9]+) -> (.*)$/);
-          if (!!matchResult) {
-            const fd = matchResult[1];
-            const path = matchResult[2];
-            accum[fd] = path;
-          }
-          return accum;
-        },
-        {}
-      );
-    }
-    return [];
+// install attaches to the ADB device or the local machine, loads
+// the frida script, and returns both the session and script if
+// successfull.
+export const install = async (
+  user: User,
+  pid: number,
+  adb: boolean,
+  onMessage: ScriptMessageHandler,
+  onAttach: Function
+): Promise<Installation | null> => {
+  let device: { attach(pid: number): Promise<Session> } = frida;
+  if (adb) {
+    device = await frida.getUsbDevice({ timeout: 1000 });
   }
-  async attach(
-    callback: ScriptMessageHandler,
-    onAttach: Function
-  ): Promise<void> {
-    this.status = SessionStatus.PENDING;
-    if (this.adb) {
-      try {
-        const device = await frida.getUsbDevice({ timeout: 1000 });
-        this.device = device;
-        try {
-          const session = await this.device.attach(this.target);
-          this.session = session;
-          this.loadScript(callback, onAttach);
-        } catch (e) {
-          this.fail(e);
-        }
-      } catch (e) {
-        this.fail(e);
-      }
-    } else {
-      try {
-        const session = await frida.attach(this.target);
-        this.session = session;
-        this.loadScript(callback, onAttach);
-      } catch (e) {
-        this.fail(e);
-      }
-    }
-  }
-  async detach(): Promise<void> {
-    if (this.session === null) {
-      this.status = SessionStatus.DETACHED;
-      if (!!this.script) {
-        throw new Error("Bad state");
-      }
-      return;
-    }
-    this.status = SessionStatus.PENDING;
-    if (this.script === null) {
-      return;
-    }
-    this.script.message.disconnect(() => {});
-    try {
-      await this.script.unload();
-      this.script = null;
-      console.debug("[FridaSession] unloaded script");
-      if (!!this.session) {
-        try {
-          await this.session.detach();
-          this.session = null;
-          this.status = SessionStatus.DETACHED;
-          console.debug("[FridaSession] detached session");
-        } catch (e) {
-          this.fail(e);
-        }
-      }
-    } catch (e) {
-      this.fail(e);
-    }
-  }
-  async send(syscalls: Syscall[]): Promise<IoctlResponse[] | null> {
-    if (this.script === null) {
-      return null;
-    }
-
-    return await this.script.exports.send(syscalls);
+  const session = await device.attach(pid);
+  const script = await loadScript(session, onMessage, onAttach);
+  if (script === null) {
+    return null;
   }
 
-  private async loadScript(
-    callback: ScriptMessageHandler,
-    onAttach: Function
-  ): Promise<void> {
-    if (this.session === null) {
-      return;
-    }
+  const installation = { session: session, script: script };
+  sessions[`${user.name}:${pid}`] = installation;
+  return installation;
+};
 
-    const scriptPath = "./bin/ioctler.js";
-    try {
-      const scriptContents = fs.readFileSync(scriptPath, "utf8");
-      try {
-        const script = await this.session.createScript(scriptContents);
-        this.script = script;
-        script.message.connect(callback);
-        await script.load();
-        this.detectIsRoot();
+// uninstall disconnects a scripts session, unloads its
+// and detaches the session.
+export const uninstall = async (installation: Installation): Promise<void> => {
+  installation.script.message.disconnect(() => {});
+  await installation.script.unload();
+  await installation.session.detach();
+};
 
-        try {
-          await script.exports.hook();
-          this.status = SessionStatus.ATTACHED;
-          onAttach();
-        } catch (e) {
-          this.fail(e);
-        }
-      } catch (e) {
-        this.fail(e);
-      }
-    } catch (e) {
-      this.fail(e);
-    }
-  }
-  private fail(e: Error) {
-    this.status = SessionStatus.FAILED;
-    this.reason = e;
-    if (!e.stack) {
-      return;
-    }
-
-    console.error(e.stack.toString());
-  }
-}
+const memoGetFridaScript = memoize(getFridaScript);

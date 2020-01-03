@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { Syscall } from "../../shared/types/syscalls";
 import { getFridaSession } from "../frida-session";
 
 /*
@@ -27,15 +26,15 @@ import { getFridaSession } from "../frida-session";
    retval: Integert          - return value of the ioctl syscall
  */
 export const addEvent = async (req: Request, res: Response) => {
-  const syscalls: Syscall[] = req.body;
-  const session = getFridaSession();
-  if (session === null) {
+  const { syscalls, pid } = req.body;
+  const installation = getFridaSession(req.user, pid);
+  if (installation === null) {
     res.status(500).end();
     return;
   }
 
   try {
-    const results = await session.send(syscalls);
+    const results = await installation.script.exports.send(syscalls);
     res.send(results);
   } catch (e) {
     res.status(500).send(e.toString());

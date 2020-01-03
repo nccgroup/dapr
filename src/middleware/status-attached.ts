@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+/*import { Request, Response, NextFunction } from "express";
 import { SessionStatus, isStatus } from "./../frida-session";
 
 export const isStatusAttached = (
@@ -18,3 +18,4 @@ export const isStatusAttached = (
 
   next();
 };
+*/

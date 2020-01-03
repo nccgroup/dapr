@@ -5,13 +5,13 @@ import { Syscall, SyscallType } from "../shared/types/syscalls";
 
 rpc.exports = {
   hook: (): void => {
-    const libcModuleNames = getLibcModules();
-    if (libcModuleNames.length === 0) {
+    const libcModules = getLibcModules();
+    if (libcModules.length === 0) {
       console.log("No libc in this module");
       return;
     }
 
-    const module = first(libcModuleNames);
+    const module = first(libcModules);
     installHooks(module);
   },
   send: (syscalls: Syscall[]): IoctlResponse[] =>

@@ -1,26 +1,25 @@
-import { CloseEvent } from "../../shared/types/close-event";
-import { first } from "lodash";
 import { SyscallType } from "../../shared/types/syscalls";
 import { hook } from "./hook";
 export const hookClose = (libcModule: Module) => {
   hook(libcModule, "close", {
-    onEnter: args => {
+    onEnter: function(
+      this: InvocationContext,
+      args: InvocationArguments
+    ): void {
       this.start = new Date().getTime();
-      this.fd = parseInt(first(args).toString());
-      return 0;
+      this.fd = args[0].toInt32();
     },
-    onLeave: retval => {
-      const ret = parseInt(retval.toString());
-
-      const event: CloseEvent = {
+    onLeave: function(
+      this: InvocationContext,
+      retval: InvocationReturnValue
+    ): void {
+      send({
         syscall: SyscallType.CLOSE,
         fd: this.fd,
-        retval: ret,
+        retval: retval.toInt32(),
         start: this.start,
         end: new Date().getTime()
-      };
-      send(event);
-      return ret;
+      });
     }
   });
 };
