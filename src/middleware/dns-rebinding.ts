@@ -1,15 +1,15 @@
-import * as express from "express";
+import { Request, Response, NextFunction } from "express";
 
 export const dnsRebinding = (
-  req: express.Request,
-  _: express.Response,
-  next: express.NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction
 ) => {
   if (
-    req.headers.host !== `localhost:${this.port}` &&
-    req.headers.host !== `127.0.0.1:${this.port}`
+    req.headers.host !== `localhost:8888` &&
+    req.headers.host !== `127.0.0.1:8888`
   ) {
-    next("DNS rebinding attack blocked");
+    res.status(500).end();
     return;
   }
 

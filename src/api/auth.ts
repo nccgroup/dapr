@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import * as jwt from "jsonwebtoken";
 import { memoize } from "lodash";
 import * as fs from "fs";
+import { privKey } from "../../shared/util/keys";
 const getSecretKey = async (): Promise<jwt.Secret | null> =>
-  await new Promise((res, rej) =>
-    fs.readFile("private.pem", (err: NodeJS.ErrnoException, data: Buffer) => {
+  await new Promise(res =>
+    fs.readFile(privKey, (err: NodeJS.ErrnoException, data: Buffer) => {
       if (err !== null) {
-        rej(err);
+        res(null);
         return;
       }
       res(data);
@@ -15,17 +16,26 @@ const getSecretKey = async (): Promise<jwt.Secret | null> =>
 
 const memoGetSecretKey = memoize(getSecretKey);
 export const authenticate = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  if (username === "root" && password === "root") {
-    const secret = await memoGetSecretKey();
-    if (secret === null) {
-      res.status(500).end();
-      return;
-    }
-    res.cookie(
-      "X-DAPR-Token",
-      jwt.sign({ name: "root" }, secret, { expiresIn: "7d" })
-    );
+  const { password } = req.body;
+  if (password !== "root") {
+    res.status(403).end();
+    return;
   }
-  res.status(200).end();
+
+  const secret = await memoGetSecretKey();
+  if (secret === null) {
+    res.status(500).end();
+    return;
+  }
+  res
+    .type("json")
+    .status(200)
+    .send(
+      JSON.stringify({
+        token: jwt.sign({ name: "root" }, secret, {
+          algorithm: "RS256",
+          expiresIn: "7d"
+        })
+      })
+    );
 };

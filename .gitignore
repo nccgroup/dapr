@@ -1,3 +1,5 @@
 node_modules
 ui/node_modules
 bin/
+config/public.pem
+config/private.pem

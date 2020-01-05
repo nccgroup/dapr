@@ -13,31 +13,31 @@ import {
 
 /*import * as thrift from "thrift/lib/nodejs/lib/thrift/browser";
 
-let host = window.location.hostname;
-let port = 80;
-let opts = {
-  transport: thrift.TBufferedTransport,
-  protocol: thrift.TJSONProtocol,
-  headers: {
-    "Content-Type": "application/vnd.apache.thrift.json"
-  },
-  https: false,
-  path: "/hello",
-  useCORS: true
-};
-console.log(Auth);
+   let host = window.location.hostname;
+   let port = 80;
+   let opts = {
+   transport: thrift.TBufferedTransport,
+   protocol: thrift.TJSONProtocol,
+   headers: {
+   "Content-Type": "application/vnd.apache.thrift.json"
+   },
+   https: false,
+   path: "/hello",
+   useCORS: true
+   };
+   console.log(Auth);
 
-let connection = thrift.createXHRConnection(host, port, opts);
-let thriftClient = thrift.createXHRClient(Auth.Client, connection);
+   let connection = thrift.createXHRConnection(host, port, opts);
+   let thriftClient = thrift.createXHRClient(Auth.Client, connection);
 
-connection.on("error", err => console.error(err));
+   connection.on("error", err => console.error(err));
 
-const nameElement = document.getElementById("name_in") as HTMLInputElement;
-const outputElement = document.getElementById("output");
-document.getElementById("get_msg").addEventListener("click", async () => {
-  const result = await thriftClient.get_message(nameElement.value);
-  outputElement.innerHTML = result;
-});*/
+   const nameElement = document.getElementById("name_in") as HTMLInputElement;
+   const outputElement = document.getElementById("output");
+   document.getElementById("get_msg").addEventListener("click", async () => {
+   const result = await thriftClient.get_message(nameElement.value);
+   outputElement.innerHTML = result;
+   });*/
 
 /*import DriverTable from "../containers/driver-table";
    import ProcessTable from "../containers/process-table";
@@ -161,18 +161,13 @@ document.getElementById("get_msg").addEventListener("click", async () => {
 import { Event } from "../types/event";
 import ProcessSelector from "./ProcessSelector";
 import useWebSocket from "./useWebsocket";
-const App = props => {
-  const key = "key";
-  const apiKey = localStorage.getItem(key);
 
-  const [sendMessage] = useWebSocket(
-    `ws://localhost:8888/event-stream?q=${apiKey}`,
-    {
-      onMessage: (e: Event) => console.log("onmessage", e),
-      onClose: () => console.log("onclose"),
-      onError: () => console.log("onerror")
-    }
-  );
+const App = props => {
+  const [sendMessage] = useWebSocket(`ws://localhost:8888/event-stream`, {
+    onMessage: (e: Event) => console.log("onmessage", e),
+    onClose: () => console.log("onclose"),
+    onError: () => console.log("onerror")
+  });
 
   return (
     <div className="root">

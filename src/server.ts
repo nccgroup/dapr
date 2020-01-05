@@ -5,7 +5,7 @@ import * as bodyParser from "body-parser";
 import { map } from "lodash";
 import { Server } from "http";
 import { corsSettings } from "./middleware/cors";
-//import { dnsRebinding } from "./middleware/dns-rebinding";
+import { dnsRebinding } from "./middleware/dns-rebinding";
 //import { isStatusPending } from "./middleware/status-pending";
 //import { isStatusAttached } from "./middleware/status-attached";
 import { isAuthenticated } from "./middleware/auth";
@@ -32,7 +32,7 @@ export const start = (port: number): Server => {
 
   app.use(bodyParser.json());
   app.use(corsSettings);
-  //app.use(dnsRebinding);
+  app.use(dnsRebinding);
   app.post("/auth", authenticate);
   app.use(isAuthenticated);
   app.get("/procs", getProcs);

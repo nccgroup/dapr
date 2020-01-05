@@ -3,11 +3,14 @@ import * as jwt from "jsonwebtoken";
 import { memoize } from "lodash";
 import { User } from "../../shared/types/user";
 import * as fs from "fs";
+import { pubKey } from "../../shared/util/keys";
+import { daprTokenName } from "../../shared/util/token";
+
 const getPubKey = async (): Promise<Buffer> =>
-  await new Promise((res, rej) =>
-    fs.readFile("public.pem", (err: NodeJS.ErrnoException, data: Buffer) => {
+  await new Promise(res =>
+    fs.readFile(pubKey, (err: NodeJS.ErrnoException, data: Buffer) => {
       if (err !== null) {
-        rej(err);
+        res(null);
         return;
       }
       res(data);
@@ -26,22 +29,30 @@ export const isAuthenticated = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { token } = req.body;
+  const dapr = req.get(daprTokenName);
+  if (!dapr) {
+    res.status(403).end();
+    return;
+  }
 
   const cert = await memoGetPubKey();
+  if (cert === null) {
+    res.status(500).end();
+    return;
+  }
   const user: User = await new Promise(res => {
-    jwt.verify(token, cert, (err: jwt.VerifyErrors, decoded: User) => {
+    jwt.verify(dapr, cert, (err: jwt.VerifyErrors, decoded: User) => {
       if (err !== null) {
-        console.error(err.message);
+        console.error(err);
         res(null);
       }
       res(decoded);
     });
   });
+  console.log("user", user);
 
   if (user === null) {
-    req.cookies.set("X-DAPR-Token", { maxAge: Date.now() });
-    res.redirect("/");
+    res.status(403).end();
     return;
   }
   req.user = user;
