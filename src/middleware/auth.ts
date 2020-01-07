@@ -49,8 +49,6 @@ export const isAuthenticated = async (
       res(decoded);
     });
   });
-  console.log("user", user);
-
   if (user === null) {
     res.status(403).end();
     return;

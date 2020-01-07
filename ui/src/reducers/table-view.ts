@@ -1,14 +1,14 @@
-import { Event } from "../types/event";
+import { Syscall } from "../../../shared/types/syscalls";
 import { ActionType } from "typesafe-actions";
 import * as driverTableActions from "../actions/actions";
-import * as _ from "lodash";
+import _ from "lodash";
 import { testEventData } from "../tests/test-data";
 import { StructDef } from "../types/struct-def";
 
 export type DriverTableAction = ActionType<typeof driverTableActions>;
 
 export interface State {
-  events: Event[];
+  events: Syscall[];
   selectedDupEventKey: string;
   selectedEventID: number;
   selectedDriver: string;

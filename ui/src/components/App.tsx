@@ -160,15 +160,9 @@ import {
    };*/
 import { Event } from "../types/event";
 import ProcessSelector from "./ProcessSelector";
-import useWebSocket from "./useWebsocket";
+import { EventsTable } from "../containers/event-table";
 
 const App = props => {
-  const [sendMessage] = useWebSocket(`ws://localhost:8888/event-stream`, {
-    onMessage: (e: Event) => console.log("onmessage", e),
-    onClose: () => console.log("onclose"),
-    onError: () => console.log("onerror")
-  });
-
   return (
     <div className="root">
       <div className="sidebar">
@@ -184,135 +178,7 @@ const App = props => {
       <div className="dataTable">
         <ProcessSelector clearTableData={() => console.log("clearing data")} />
         <textarea />
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Driver Name</th>
-              <th>OpCode</th>
-              <th>Mode</th>
-              <th>Size</th>
-              <th>Start</th>
-              <th>Request</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-            <tr>
-              <td>blah</td>
-              <td>blah</td>
-              <td>blah</td>
-            </tr>
-          </tbody>
-        </table>
+        <EventsTable />
       </div>
       <div className="detailsViews">
         <div className="hexViewer">hex viewer</div>

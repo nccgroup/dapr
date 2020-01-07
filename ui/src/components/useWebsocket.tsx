@@ -37,7 +37,7 @@ export default class WebSocketComp extends React.Component<
 }*/
 
 interface WebSocketClientOptions {
-  onMessage(e: Event): void;
+  onMessage(e: MessageEvent): void;
   onClose(): void;
   onError(): void;
 }

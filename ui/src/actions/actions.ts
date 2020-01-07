@@ -1,5 +1,5 @@
 import { action } from "typesafe-actions";
-import { Event } from "../types/event";
+import { Syscall } from "../../../shared/types/syscalls";
 import { StructDef } from "../types/struct-def";
 
 export const SELECT_PROCESS = "SELECT_PROCESS";
@@ -10,8 +10,8 @@ export const SELECT_DRIVER = "SELECT_DRIVER";
 export const SELECT_DUP_EVENT = "SELECT_DUP_EVENT";
 export const SELECT_EVENT = "SELECT_EVENT";
 export const BACK = "BACK";
-export const addEvent = (e: Event) => action(ADD_EVENT, e);
-export const addEvents = (e: Event[]) => action(ADD_EVENTS, e);
+export const addEvent = (e: Syscall) => action(ADD_EVENT, e);
+export const addEvents = (e: Syscall[]) => action(ADD_EVENTS, e);
 export const selectDriver = (d: string) => action(SELECT_DRIVER, d);
 export const selectDupEvent = (i: string) => action(SELECT_DUP_EVENT, i);
 export const back = () => action(BACK);

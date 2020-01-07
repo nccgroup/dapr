@@ -1,5 +1,6 @@
 import { Request } from "express";
-import { setWebsocket } from "../websocket";
+import { setWebSocket } from "../websocket";
+import { Syscall, SyscallType } from "../../shared/types/syscalls";
 import * as ws from "ws";
 /*
    # API Definition
@@ -28,6 +29,17 @@ import * as ws from "ws";
  */
 
 export const wsHandler = (ws: ws, _: Request) => {
-  const websocket = setWebsocket(ws);
-  websocket.on("message", (_: ws.Data) => {});
+  const websocket = setWebSocket(ws);
+  websocket.on("message", (data: ws.Data) => {
+    const event: Syscall = Object.assign(
+      {
+        type: "",
+        syscall: SyscallType.IOCTL,
+        fd: 0,
+        request: 0,
+        data: new ArrayBuffer(0)
+      },
+      data
+    );
+  });
 };

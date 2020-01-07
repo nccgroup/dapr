@@ -1,9 +1,9 @@
 import { getFridaSessions, uninstall } from "./frida-session";
 import * as express from "express";
-import * as expressWs from "express-ws";
+import { Server as WSServer } from "ws";
 import * as bodyParser from "body-parser";
 import { map } from "lodash";
-import { Server } from "http";
+import { Server as HTTPServer, createServer } from "http";
 import { corsSettings } from "./middleware/cors";
 import { dnsRebinding } from "./middleware/dns-rebinding";
 //import { isStatusPending } from "./middleware/status-pending";
@@ -26,9 +26,8 @@ import { updateType } from "./api/update-type";
 import { deleteType } from "./api/delete-type";
 import { authenticate } from "./api/auth";
 
-export const start = (port: number): Server => {
-  const ws = expressWs(express());
-  const app = ws.app;
+export const start = (port: number): HTTPServer => {
+  const app = express();
 
   app.use(bodyParser.json());
   app.use(corsSettings);
@@ -43,7 +42,7 @@ export const start = (port: number): Server => {
   app.post("/session/uninstall", sessionUninstall);
   //import { lastEvent } from "./api/last-event";
   //app.get("/last-event", lastEvent);
-  app.ws("/event-stream", wsHandler);
+  //  .ws("/event-stream", wsHandler);
   app.get("/events", getEvents);
   app.get("/events/:index", getEvent);
   app.get("/events/range/:begin", getEventsRangeStart);
@@ -78,12 +77,20 @@ export const start = (port: number): Server => {
   //app.put("/typeAssignments/:id", updateTypeAssignment);
   //app.post("/typeAssignments/:id/delete", deleteTypeAssignment);
 
-  return app.listen(port, () => console.log("started!"));
+  const httpServer = createServer();
+  const wsServer = new WSServer({ server: httpServer });
+  httpServer.on("request", app);
+  wsServer.on("connection", wsHandler);
+  return httpServer.listen(port, () => console.log("started!"));
 };
 
-export const quit = async (server: Server): Promise<void> => {
+export const quit = async (server: HTTPServer): Promise<void> => {
   console.log("shutting down open sessions");
-  await Promise.all(map(getFridaSessions(), uninstall));
+  try {
+    await Promise.all(map(getFridaSessions(), uninstall));
+  } catch (e) {
+    console.error(e);
+  }
   console.log("all frida sessions uninstalled");
   server.close();
   console.log("server closed");

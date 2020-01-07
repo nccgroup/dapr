@@ -5,6 +5,7 @@ import { ScriptMessageHandler, Message, MessageType } from "frida/dist/script";
 import { memoResolveFileDescriptor } from "../../shared/util/procs";
 import { defaultTo } from "lodash";
 import { Syscall } from "../../shared/types/syscalls";
+import { getWebSocket } from "../websocket";
 /*
    # API Definition
    POST /session/attach
@@ -60,6 +61,10 @@ const onFridaMessage = (pid: number, adb: boolean): ScriptMessageHandler => (
         )
       });
 
+      const ws = getWebSocket();
+      if (ws !== null) {
+        ws.send(event);
+      }
       events.insert(event);
       break;
     case MessageType.Error:

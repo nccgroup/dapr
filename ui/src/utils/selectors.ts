@@ -1,8 +1,10 @@
 import * as _ from "lodash";
 import { Event, DupEvent } from "../types/event";
+import { Syscall } from "../../../shared/types/syscalls";
 import { Driver } from "../types/driver-table";
 import { StructDef } from "../types/struct-def";
 
+/*
 // selectEventsByDriverName filters the provided events by the specified
 // driverName field.
 export const selectEventsByDriverName = (
@@ -23,14 +25,14 @@ export const selectCurrentGroupingWithID = (
   events: Event[],
   driver: string,
   dupEventKey: string
-): Event[] => {
+): Syscall[] => {
   return _.map(selectCurrentGrouping(events, driver, dupEventKey), enumerate);
 };
 
 // groupingDupFunc is the key used to group duplicate
 // events by.
-export const groupingDupFunc = (i: Event) =>
-  `${i.request}-${i.driverName}-${i.opcode}`;
+export const groupingDupFunc = (i: Syscall) =>
+  `${i.request}-${i.fd}-${i.syscall}`;
 
 // selectCurrentEvent return the event object associated with
 // the currently selected event in the event dashboard event
@@ -49,12 +51,12 @@ export const selectCurrentEvent = (
 // selectCurrentGrouping returns the events grouped
 // for the currently selected row in the dup-event-table.
 export const selectCurrentGrouping = (
-  events: Event[],
+  events: Syscall[],
   driver: string,
   dupEventKey: string
-): Event[] => {
-  let grouping: Event[] = [];
-  _.forIn(groupByDups(events), (v: Event[], k: string) => {
+): Syscall[] => {
+  let grouping: Syscall[] = [];
+  _.forIn(groupByDups(events), (v: Syscall[], k: string) => {
     if (k === dupEventKey) {
       grouping = v;
     }
@@ -71,8 +73,12 @@ export const selectDrivers = (events: Event[]): Driver[] => {
 };
 
 // groupByDups groups a set of events by the groupDupFunction.
-export const groupByDups = (events: Event[]): _.Dictionary<Event[]> =>
-  _.groupBy(events, groupingDupFunc);
+export function groupByDups<T>(
+  events: T[],
+  grouping: Value
+): _.Dictionary<T[]> {
+  return _.groupBy(events, grouping);
+}
 
 // addDupLenKey takes a grouping and returns a set of events
 // where the number of duplicates is added to the column of the
@@ -103,3 +109,4 @@ export const selectTypeByName = (
 ): StructDef => {
   return _.filter(types, i => i.name === typeName)[0];
 };
+*/
