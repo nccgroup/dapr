@@ -1,6 +1,4 @@
 import * as React from "react";
-import { WebSocketCompProps } from "../types/websocket";
-import { Event } from "../types/event";
 /*
 export default class WebSocketComp extends React.Component<
   WebSocketCompProps,
@@ -37,7 +35,7 @@ export default class WebSocketComp extends React.Component<
 }*/
 
 interface WebSocketClientOptions {
-  onMessage(e: MessageEvent): void;
+  onMessage(e: SharedTypes.Syscall): void;
   onClose(): void;
   onError(): void;
 }
@@ -54,7 +52,7 @@ const useWebSocket = (url: string, options: WebSocketClientOptions) => {
       console.log("opened");
     };
     websocket.onmessage = (e: MessageEvent) => {
-      const data: Event = JSON.parse(e.data);
+      const data: SharedTypes.Syscall = JSON.parse(e.data);
       options.onMessage(data);
     };
     websocket.onclose = options.onClose;

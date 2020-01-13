@@ -1,5 +1,5 @@
 import * as React from "react";
-import EventTable from "../containers/event-table";
+//import EventTable from "../containers/event-table";
 import HexEditor from "../containers/hex-editor";
 import StructEditor from "../containers/struct-editor";
 import EventHistory from "../containers/event-history";
@@ -12,7 +12,6 @@ export default class EventDashboard extends React.Component<{}, {}> {
       <div className="dashboard-container">
         <ControlPane />
         <div className="dashboard">
-          <EventTable />
           <div className="event-details">
             <HexEditor />
             <StructEditor />

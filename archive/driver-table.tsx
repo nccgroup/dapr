@@ -1,4 +1,4 @@
-import * as React from "react";
+/*import * as React from "react";
 import { Event } from "../types/event";
 import { DriverTableProps } from "../types/driver-table";
 import ReactTable from "react-table";
@@ -54,6 +54,6 @@ export class DriverTable extends React.Component<DriverTableProps, {}> {
           }
         }}
       />
-    );*/
+    );
   }
-}
+}*/

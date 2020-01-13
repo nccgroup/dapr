@@ -5,10 +5,3 @@ export interface DupEventTableProps {
   selectDupEvent(e: string): void;
   events: DupEvent[];
 }
-
-export interface EventTableProps {
-  selectedEventID: number;
-  selectedDriver: string;
-  selectEvent(e: number): void;
-  events: Event[];
-}

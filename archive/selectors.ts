@@ -1,9 +1,9 @@
 import * as _ from "lodash";
-import { Event, DupEvent } from "../types/event";
+/*import { Event, DupEvent } from "../types/event";
 import { Syscall } from "../../../shared/types/syscalls";
 import { Driver } from "../types/driver-table";
 import { StructDef } from "../types/struct-def";
-
+*/
 /*
 // selectEventsByDriverName filters the provided events by the specified
 // driverName field.

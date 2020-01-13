@@ -1,4 +1,6 @@
-export interface User {
-  name: string;
-  expired: number;
+namespace SharedTypes {
+  export interface User {
+    name: string;
+    expired: number;
+  }
 }

@@ -1,4 +1,4 @@
-import { Event } from "../types/event";
+/*import { Event } from "../types/event";
 
 export const testEventData: Event[] = [
   {
@@ -288,3 +288,4 @@ export const testEventData: Event[] = [
     request: 0xdeadbeef
   }
 ];
+*/

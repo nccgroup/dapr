@@ -1,6 +1,15 @@
 import React from "react";
-import { Process } from "../types/process-table";
 import _ from "lodash";
+
+interface Process {
+  pid: number;
+  name: string;
+  cmd: string;
+  ppid: number;
+  uid: number;
+  cpu: number;
+  memory: number;
+}
 
 export const daprTokenName = "dapr";
 const auth = async (): Promise<string | null> => {

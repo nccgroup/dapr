@@ -1,20 +1,18 @@
-import { Syscall } from "../../../shared/types/syscalls";
 import { ActionType } from "typesafe-actions";
 import * as driverTableActions from "../actions/actions";
 import _ from "lodash";
-import { testEventData } from "../tests/test-data";
-import { StructDef } from "../types/struct-def";
+//import { testEventData } from "../tests/test-data";
 
 export type DriverTableAction = ActionType<typeof driverTableActions>;
 
 export interface State {
-  events: Syscall[];
+  events: SharedTypes.Syscall[];
   selectedDupEventKey: string;
   selectedEventID: number;
   selectedDriver: string;
 
   // type editor/dissector
-  types: StructDef[];
+  //  types: SharedTypes.StructDef[];
   selectedTypeForDissector: string;
   selectedTypeForEditor: string;
   selectedProcess: string;
@@ -27,7 +25,7 @@ const defaultState: State = {
   selectedEventID: -1,
   selectedDriver: "",
   selectedProcess: "",
-  types: [],
+  //  types: [],
   selectedTypeForDissector: "",
   selectedTypeForEditor: "",
   url: "localhost:8888"
@@ -57,12 +55,12 @@ export function tableView(state = defaultState, action: DriverTableAction) {
       return Object.assign({}, state, { selectedDupEventKey: action.payload });
     case driverTableActions.SELECT_EVENT:
       return Object.assign({}, state, { selectedEventID: action.payload });
-    case driverTableActions.SAVE_TYPE:
+    /*    case driverTableActions.SAVE_TYPE:
       if (!_.find(state.types, type => type.name === action.payload.name)) {
         return Object.assign({}, state, {
           types: state.types.concat(action.payload)
         });
-      }
+      }*/
     case driverTableActions.DISSECTOR_SELECT_TYPE:
       return Object.assign({}, state, {
         selectedTypeForDissector: action.payload

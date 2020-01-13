@@ -18,5 +18,5 @@
     "jsx": "preserve",
     "noImplicitAny": false
   },
-  "include": ["src"]
+  "include": ["src", "../shared"]
 }

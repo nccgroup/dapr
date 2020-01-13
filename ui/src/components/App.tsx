@@ -158,7 +158,7 @@ import {
    </div>
    );
    };*/
-import { Event } from "../types/event";
+//import { Event } from "../types/event";
 import ProcessSelector from "./ProcessSelector";
 import { EventsTable } from "../containers/event-table";
 

@@ -8,6 +8,6 @@ export interface DriverTableProps {
   selectedDriver: string;
   selectDriver(e: string): void;
   drivers: Driver[];
-  addEvents(e: Event[]): void;
+  addEvents(e: SharedTypes.Syscall[]): void;
   url: string;
 }
