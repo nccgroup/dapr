@@ -69,7 +69,10 @@ export const install = async (
   if (adb) {
     device = await frida.getUsbDevice({ timeout: 1000 });
   }
-  const session = await device.attach(pid);
+  const session = await attach(device, pid)
+  if (session === null) {
+    return null;
+  }
   const script = await loadScript(session, onMessage, onAttach);
   if (script === null) {
     return null;
@@ -79,6 +82,15 @@ export const install = async (
   sessions[`${user.name}:${pid}`] = installation;
   return installation;
 };
+
+const attach = async (device : { attach(pid: number): Promise<Session> } , pid :number):Promise<Session|null> => {
+  try {
+    return await device.attach(pid)
+  } catch (e) {
+    console.error("Error attaching: ", e)
+  }
+  return null;
+}
 
 // uninstall disconnects a scripts session, unloads its
 // and detaches the session.
