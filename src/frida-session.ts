@@ -3,8 +3,7 @@ import * as fs from "fs";
 import * as frida from "frida";
 import { Session } from "frida/dist/session";
 import { Script, ScriptMessageHandler } from "frida/dist/script";
-import { defaultTo, memoize, map } from "lodash";
-import { User } from "../shared/types/user";
+import { defaultTo, memoize } from "lodash";
 
 interface Installation {
   session: Session;
@@ -16,7 +15,7 @@ const sessions: { [key: string]: Installation } = {};
 export const getFridaSessions = (): Installation[] => Object.values(sessions);
 
 // getFridaSession returns the frida session associated with the user and pid.
-export const getFridaSession = (user: User, pid: number): Installation | null =>
+export const getFridaSession = (user: SharedTypes.User, pid: number): Installation | null =>
   defaultTo(sessions[`${user.name}:${pid}`], null);
 
 // getFridaScript reads the contents of the frida script
@@ -60,7 +59,7 @@ const loadScript = async (
 // the frida script, and returns both the session and script if
 // successfull.
 export const install = async (
-  user: User,
+  user: SharedTypes.User,
   pid: number,
   adb: boolean,
   onMessage: ScriptMessageHandler,

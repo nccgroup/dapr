@@ -23,6 +23,7 @@ export const authenticate = async (req: Request, res: Response) => {
   }
 
   const secret = await memoGetSecretKey();
+  console.log("Secret:", secret)
   if (secret === null) {
     res.status(500).end();
     return;

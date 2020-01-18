@@ -5,8 +5,10 @@ export const pubKey = "./config/public.pem";
 export const privKey = "./config/private.pem";
 export const genJWTKeys = (): void => {
   if (keysGenerated()) {
+    console.log("keys were generated")
     return;
   }
+  console.log("keys were not generated")
   shell(`openssl genrsa -out ${privKey} 2048`.split(" "), false);
   shell(`openssl rsa -in ${privKey} -pubout -out ${pubKey}`.split(" "), false);
 };

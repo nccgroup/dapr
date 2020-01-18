@@ -6,6 +6,6 @@
     "noEmit": true,
     "esModuleInterop": true
   },
-  "include": ["ioctler.ts"],
+  "include": ["ioctler.ts", "../shared"],
   "exclude": ["node_modules", "**/*.spec.ts"]
 }

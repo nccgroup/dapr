@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as jwt from "jsonwebtoken";
 import { memoize } from "lodash";
-import { User } from "../../shared/types/user";
 import * as fs from "fs";
 import { pubKey } from "../../shared/util/keys";
 import { daprTokenName } from "../../shared/util/token";
@@ -20,7 +19,7 @@ const memoGetPubKey = memoize(getPubKey);
 
 declare module "express" {
   interface Request {
-    user?: User;
+    user?: SharedTypes.User;
   }
 }
 
@@ -40,8 +39,8 @@ export const isAuthenticated = async (
     res.status(500).end();
     return;
   }
-  const user: User = await new Promise(res => {
-    jwt.verify(dapr, cert, (err: jwt.VerifyErrors, decoded: User) => {
+  const user: SharedTypes.User = await new Promise(res => {
+    jwt.verify(dapr, cert, (err: jwt.VerifyErrors, decoded: SharedTypes.User) => {
       if (err !== null) {
         console.error(err);
         res(null);

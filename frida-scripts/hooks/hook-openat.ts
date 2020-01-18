@@ -1,5 +1,3 @@
-import { Mode } from "../../shared/types/mode";
-import { SyscallType } from "../../shared/types/syscalls";
 import { hook } from "./hook";
 export const hookOpenAt = (libcModule: Module) => {
   hook(libcModule, "openat", {
@@ -9,14 +7,14 @@ export const hookOpenAt = (libcModule: Module) => {
     ): void {
       this.start = new Date().getTime();
       this.driverName = "openat:" + args[0].readCString();
-      this.mode = Mode.READ; // HACK
+      this.mode = SharedTypes.Mode.READ; // HACK
     },
     onLeave: function(
       this: InvocationContext,
       retval: InvocationReturnValue
     ): void {
       send({
-        syscall: SyscallType.OPEN,
+        syscall: SharedTypes.SyscallType.OPEN,
         driverName: this.driverName,
         mode: this.mode,
         retval: retval.toInt32(),

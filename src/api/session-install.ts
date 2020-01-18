@@ -4,7 +4,6 @@ import { events } from "../store/db";
 import { ScriptMessageHandler, Message, MessageType } from "frida/dist/script";
 import { memoResolveFileDescriptor } from "../../shared/util/procs";
 import { defaultTo } from "lodash";
-import { Syscall } from "../../shared/types/syscalls";
 import { getWebSocket } from "../websocket";
 /*
    # API Definition
@@ -45,7 +44,7 @@ const onFridaMessage = (pid: number, adb: boolean): ScriptMessageHandler => (
 ): void => {
   switch (message.type) {
     case MessageType.Send:
-      let event: Syscall = Object.assign(
+      let event: SharedTypes.Syscall = Object.assign(
         {},
         { type: message.type, ...message.payload }
       );

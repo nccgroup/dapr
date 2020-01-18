@@ -1,4 +1,3 @@
-import { SyscallType } from "../../shared/types/syscalls";
 import { hook } from "./hook";
 export const hookSocket = (libcModule: Module) => {
   hook(libcModule, "socket", {
@@ -16,7 +15,7 @@ export const hookSocket = (libcModule: Module) => {
       retval: InvocationReturnValue
     ): void {
       send({
-        syscall: SyscallType.SOCKET,
+        syscall: SharedTypes.SyscallType.SOCKET,
         domain: this.domain,
         type: this.type,
         protocol: this.protocol,

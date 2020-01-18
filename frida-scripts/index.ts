@@ -1,7 +1,6 @@
 import { first, map, filter } from "lodash";
 import { getLibcModules, installHooks } from "./init-libc";
 import { sendIoctl, IoctlResponse } from "./send-ioctl";
-import { Syscall, SyscallType } from "../shared/types/syscalls";
 
 rpc.exports = {
   hook: (): void => {
@@ -14,10 +13,10 @@ rpc.exports = {
     const module = first(libcModules);
     installHooks(module);
   },
-  send: (syscalls: Syscall[]): IoctlResponse[] =>
+  send: (syscalls: SharedTypes.Syscall[]): IoctlResponse[] =>
     filter(
       map(syscalls, (syscall): IoctlResponse | null => {
-        if (syscall.syscall !== SyscallType.IOCTL) {
+        if (syscall.syscall !== SharedTypes.SyscallType.IOCTL) {
           console.debug("Must be of type syscall.IOCTL");
           return null;
         }
