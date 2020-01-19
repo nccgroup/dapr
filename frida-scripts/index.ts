@@ -1,7 +1,7 @@
-import { first, map, filter } from "lodash";
+import { first, map } from "lodash";
 import { getLibcModules, installHooks } from "./init-libc";
 import { sendIoctl, IoctlResponse } from "./send-ioctl";
-
+import { Syscall, SyscallType } from "../shared/types/syscalls";
 rpc.exports = {
   hook: (): void => {
     const libcModules = getLibcModules();
@@ -9,32 +9,33 @@ rpc.exports = {
       console.log("No libc in this module");
       return;
     }
-
+    console.log("hooking. libcmodules: ", libcModules.length);
     const module = first(libcModules);
+    if (!module) {
+      console.log("No libc in this module");
+      return;
+    }
+    console.log("module", module.name);
     installHooks(module);
   },
-  send: (syscalls: SharedTypes.Syscall[]): IoctlResponse[] =>
-    filter(
-      map(syscalls, (syscall): IoctlResponse | null => {
-        if (syscall.syscall !== SharedTypes.SyscallType.IOCTL) {
-          console.debug("Must be of type syscall.IOCTL");
-          return null;
-        }
+  send: (syscalls: Syscall[]): (IoctlResponse | null)[] =>
+    map(syscalls, (syscall): IoctlResponse | null => {
+      if (syscall.syscall !== SyscallType.IOCTL) {
+        console.debug("Must be of type syscall.IOCTL");
+        return null;
+      }
 
-        const libcModuleNames = getLibcModules();
-        if (libcModuleNames.length === 0) {
-          console.debug("No libc in this module");
-          return null;
-        }
+      const libcModuleNames = getLibcModules();
+      if (libcModuleNames.length === 0) {
+        console.debug("No libc in this module");
+        return null;
+      }
 
-        const module = first(libcModuleNames);
-        return sendIoctl(
-          module.name,
-          syscall.fd,
-          syscall.request,
-          syscall.data
-        );
-      }),
-      r => r !== null
-    )
+      const module = first(libcModuleNames);
+      if (!module) {
+        console.log("No libc in this module");
+        return null;
+      }
+      return sendIoctl(module.name, syscall.fd, syscall.request, syscall.data);
+    })
 };

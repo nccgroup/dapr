@@ -1,4 +1,5 @@
 import { hook } from "./hook";
+import { SyscallType } from "../../shared/types/syscalls";
 export const hookOpen = (libcModule: Module) => {
   hook(libcModule, "open", {
     onEnter: function(
@@ -14,7 +15,7 @@ export const hookOpen = (libcModule: Module) => {
       retval: InvocationReturnValue
     ): void {
       send({
-        syscall: SharedTypes.SyscallType.OPEN,
+        syscall: SyscallType.OPEN,
         driverName: this.driverName,
         mode: this.mode,
         retval: retval.toInt32(),

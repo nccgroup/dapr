@@ -12,7 +12,12 @@ import { getFridaSession, uninstall } from "../frida-session";
  */
 export const sessionUninstall = async (req: Request, res: Response) => {
   const { pid } = req.body;
-  const installation = getFridaSession(req.user, pid);
+  const { user } = req;
+  if (!user) {
+    res.status(403).send("No user");
+    return;
+  }
+  const installation = getFridaSession(user, pid);
   if (installation === null) {
     res.status(304).end();
     return;

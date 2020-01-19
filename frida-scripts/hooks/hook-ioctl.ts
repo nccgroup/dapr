@@ -1,5 +1,6 @@
 import { hook } from "./hook";
-
+import { Mode } from "../../shared/types/mode";
+import { SyscallType } from "../../shared/types/syscalls";
 export const hookIoctl = (libcModule: Module) => {
   hook(libcModule, "ioctl", {
     onEnter: function(
@@ -14,16 +15,16 @@ export const hookIoctl = (libcModule: Module) => {
       this.modebits = (this.request >> 30) & ((1 << 0x2) - 1);
       switch (this.modebits) {
         case 0:
-          this.mode = SharedTypes.Mode.UNSURE;
+          this.mode = Mode.UNSURE;
           break;
         case 1:
-          this.mode = SharedTypes.Mode.WRITE;
+          this.mode = Mode.WRITE;
           break;
         case 2:
-          this.mode = SharedTypes.Mode.READ;
+          this.mode = Mode.READ;
           break;
         case 3:
-          this.mode = SharedTypes.Mode.READ_WRITE;
+          this.mode = Mode.READ_WRITE;
           break;
       }
 
@@ -38,7 +39,7 @@ export const hookIoctl = (libcModule: Module) => {
     ): void {
       send(
         {
-          syscall: SharedTypes.SyscallType.IOCTL,
+          syscall: SyscallType.IOCTL,
           fd: this.fd,
           driverName: this.driverName,
           mode: this.mode,

@@ -1,5 +1,6 @@
 import { hook } from "./hook";
-
+import { SyscallType } from "../../shared/types/syscalls";
+import { Mode } from "../../shared/types/mode";
 export const hookOpenGeneric = (
   libcModule: Module,
   hookFunctionName: string
@@ -10,9 +11,9 @@ export const hookOpenGeneric = (
       retval: InvocationReturnValue
     ): void {
       send({
-        syscall: SharedTypes.SyscallType.OPEN,
+        syscall: SyscallType.OPEN,
         driverName: "anon_inode:[" + hookFunctionName + "]",
-        mode: SharedTypes.Mode.READ,
+        mode: Mode.READ,
         retval: retval.toInt32(),
         start: 0,
         end: new Date().getTime()

@@ -5,7 +5,7 @@ import * as fs from "fs";
 import { privKey } from "../../shared/util/keys";
 const getSecretKey = async (): Promise<jwt.Secret | null> =>
   await new Promise(res =>
-    fs.readFile(privKey, (err: NodeJS.ErrnoException, data: Buffer) => {
+    fs.readFile(privKey, (err: NodeJS.ErrnoException | null, data: Buffer) => {
       if (err !== null) {
         res(null);
         return;

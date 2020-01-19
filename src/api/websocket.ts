@@ -1,6 +1,7 @@
 import { Request } from "express";
 import { setWebSocket } from "../websocket";
 import * as ws from "ws";
+import { Syscall, SyscallType } from "../../shared/types/syscalls";
 /*
    # API Definition
    Websocket Event Stream
@@ -30,10 +31,10 @@ import * as ws from "ws";
 export const wsHandler = (ws: ws, _: Request) => {
   const websocket = setWebSocket(ws);
   websocket.on("message", (data: ws.Data) => {
-    const event: SharedTypes.Syscall = Object.assign(
+    const event: Syscall = Object.assign(
       {
         type: "",
-        syscall: SharedTypes.SyscallType.IOCTL,
+        syscall: SyscallType.IOCTL,
         fd: 0,
         request: 0,
         data: new ArrayBuffer(0)

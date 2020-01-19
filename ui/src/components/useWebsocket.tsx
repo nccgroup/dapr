@@ -1,41 +1,41 @@
 import * as React from "react";
 /*
-export default class WebSocketComp extends React.Component<
-  WebSocketCompProps,
-  {}
-> {
-  public render() {
-    return <span className="hidden" />;
-  }
-  public componentDidMount() {
-    // When the application loads for the first time, connect to the websocket.
-    this.connectWebsocket();
-  }
+   export default class WebSocketComp extends React.Component<
+   WebSocketCompProps,
+   {}
+   > {
+   public render() {
+   return <span className="hidden" />;
+   }
+   public componentDidMount() {
+   // When the application loads for the first time, connect to the websocket.
+   this.connectWebsocket();
+   }
 
-  private connectWebsocket() {
-    const websocket = new WebSocket(`ws://${this.props.url}/event-stream`);
+   private connectWebsocket() {
+   const websocket = new WebSocket(`ws://${this.props.url}/event-stream`);
    websocket.onopen = (): void => {
-      console.log("websocket opened");
-    };
+   console.log("websocket opened");
+   };
 
-    websocket.onmessage = (event: MessageEvent) => {
-      try {
-        const data: Event = JSON.parse(event.data);
-        this.props.addEvent(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
+   websocket.onmessage = (event: MessageEvent) => {
+   try {
+   const data: Event = JSON.parse(event.data);
+   this.props.addEvent(data);
+   } catch (e) {
+   console.error(e);
+   }
+   };
 
-    websocket.onclose = () => {
-      console.log("websocket closed");
-      //      setTimeout(this.connectWebsocket, 1500);
-    };
-  }
-}*/
-
+   websocket.onclose = () => {
+   console.log("websocket closed");
+   //      setTimeout(this.connectWebsocket, 1500);
+   };
+   }
+   }*/
+import { Syscall } from "../sharetypes/syscalls";
 interface WebSocketClientOptions {
-  onMessage(e: SharedTypes.Syscall): void;
+  onMessage(e: Syscall): void;
   onClose(): void;
   onError(): void;
 }
@@ -52,7 +52,7 @@ const useWebSocket = (url: string, options: WebSocketClientOptions) => {
       console.log("opened");
     };
     websocket.onmessage = (e: MessageEvent) => {
-      const data: SharedTypes.Syscall = JSON.parse(e.data);
+      const data: Syscall = JSON.parse(e.data);
       options.onMessage(data);
     };
     websocket.onclose = options.onClose;

@@ -1,4 +1,4 @@
-import * as _ from 'lodash';
+/*import * as _ from 'lodash';
 import { Buffer } from 'buffer/';
 import { Int64LE, Uint64LE } from 'int64-buffer';
 import { Expression } from './expression';
@@ -233,3 +233,4 @@ export const arch = arch => {
   }
   architecture = arch;
 };
+*/

@@ -1,0 +1,19 @@
+{
+  "name": "frida-scripts",
+  "version": "1.0.0",
+  "description": "frida scripts for hooking syscalls",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "ts-is-present": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.149",
+    "frida-compile": "^9.1.0"
+  }
+}

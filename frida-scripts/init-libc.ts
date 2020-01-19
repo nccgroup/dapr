@@ -9,7 +9,10 @@ import { hookOpenGeneric } from "./hooks/hook-open-generic";
 export const getLibcModules = (): Module[] =>
   filter(Process.enumerateModules(), (m: Module): boolean => {
     const matches = m.name.match(/^libc[\.\-]/);
-    return matches && matches.length > 0;
+    if (matches === null) {
+      return false;
+    }
+    return matches.length > 0;
   });
 
 export const installHooks = (module: Module) => {

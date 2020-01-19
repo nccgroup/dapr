@@ -10,6 +10,6 @@ import { Request, Response } from "express";
    index: Integer
  */
 //TODO: not really interested in this call. client should control this
-export const lastEvent = (_: Request, res: Response) => {
+/*export const lastEvent = (_: Request, res: Response) => {
   res.send({ index: this.lastEmittedIndex });
-};
+};*/

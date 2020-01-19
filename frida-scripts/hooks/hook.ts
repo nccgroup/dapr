@@ -8,6 +8,7 @@ export const hook = (
   const pointer = first(
     filter(libcModule.enumerateExports(), p => p.name === exportName)
   );
+  console.log("hooking", exportName, libcModule.name, pointer);
   if (!pointer) {
     console.error(`No export named "${exportName}"`);
     return;

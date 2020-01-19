@@ -1,9 +1,9 @@
 import * as fs from "fs";
-
 import * as frida from "frida";
 import { Session } from "frida/dist/session";
 import { Script, ScriptMessageHandler } from "frida/dist/script";
 import { defaultTo, memoize } from "lodash";
+import { User } from "../shared/types/user";
 
 interface Installation {
   session: Session;
@@ -15,7 +15,7 @@ const sessions: { [key: string]: Installation } = {};
 export const getFridaSessions = (): Installation[] => Object.values(sessions);
 
 // getFridaSession returns the frida session associated with the user and pid.
-export const getFridaSession = (user: SharedTypes.User, pid: number): Installation | null =>
+export const getFridaSession = (user: User, pid: number): Installation | null =>
   defaultTo(sessions[`${user.name}:${pid}`], null);
 
 // getFridaScript reads the contents of the frida script
@@ -26,7 +26,7 @@ const getFridaScript = async (): Promise<string | null> => {
     fs.readFile(
       scriptPath,
       "utf8",
-      (err: NodeJS.ErrnoException, data: string) => {
+      (err: NodeJS.ErrnoException | null, data: string) => {
         if (err !== null) {
           res(null);
         }
@@ -59,7 +59,7 @@ const loadScript = async (
 // the frida script, and returns both the session and script if
 // successfull.
 export const install = async (
-  user: SharedTypes.User,
+  user: User,
   pid: number,
   adb: boolean,
   onMessage: ScriptMessageHandler,
@@ -69,7 +69,7 @@ export const install = async (
   if (adb) {
     device = await frida.getUsbDevice({ timeout: 1000 });
   }
-  const session = await attach(device, pid)
+  const session = await attach(device, pid);
   if (session === null) {
     return null;
   }
@@ -83,21 +83,38 @@ export const install = async (
   return installation;
 };
 
-const attach = async (device : { attach(pid: number): Promise<Session> } , pid :number):Promise<Session|null> => {
+const attach = async (
+  device: { attach(pid: number): Promise<Session> },
+  pid: number
+): Promise<Session | null> => {
   try {
-    return await device.attach(pid)
+    return await device.attach(pid);
   } catch (e) {
-    console.error("Error attaching: ", e)
+    console.error("Error attaching: ", e);
   }
   return null;
-}
+};
 
 // uninstall disconnects a scripts session, unloads its
 // and detaches the session.
 export const uninstall = async (installation: Installation): Promise<void> => {
-  installation.script.message.disconnect(() => {});
-  await installation.script.unload();
-  await installation.session.detach();
+  try {
+    installation.script.message.disconnect(() => {});
+  } catch (e) {
+    console.error("Error disconnecting script", e);
+  }
+
+  try {
+    await installation.script.unload();
+  } catch (e) {
+    console.error("Error unloading script", e);
+  }
+
+  try {
+    await installation.session.detach();
+  } catch (e) {
+    console.error("Error detaching session", e);
+  }
 };
 
 const memoGetFridaScript = memoize(getFridaScript);

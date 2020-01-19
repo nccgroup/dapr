@@ -1,4 +1,5 @@
 import { hook } from "./hook";
+import { SyscallType } from "../../shared/types/syscalls";
 export const hookClose = (libcModule: Module) => {
   hook(libcModule, "close", {
     onEnter: function(
@@ -13,7 +14,7 @@ export const hookClose = (libcModule: Module) => {
       retval: InvocationReturnValue
     ): void {
       send({
-        syscall: SharedTypes.SyscallType.CLOSE,
+        syscall: SyscallType.CLOSE,
         fd: this.fd,
         retval: retval.toInt32(),
         start: this.start,

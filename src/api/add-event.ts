@@ -27,7 +27,12 @@ import { getFridaSession } from "../frida-session";
  */
 export const addEvent = async (req: Request, res: Response) => {
   const { syscalls, pid } = req.body;
-  const installation = getFridaSession(req.user, pid);
+  const { user } = req;
+  if (!user) {
+    res.status(403).send("No user");
+    return;
+  }
+  const installation = getFridaSession(user, pid);
   if (installation === null) {
     res.status(500).end();
     return;

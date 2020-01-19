@@ -1,10 +1,11 @@
-const ioctl = (libcModuleName: string) =>
-  new NativeFunction(Module.findExportByName(libcModuleName, "ioctl"), "int", [
-    "int",
-    "ulong",
-    "...",
-    "pointer"
-  ]);
+const ioctl = (libcModuleName: string) => {
+  const module = Module.findExportByName(libcModuleName, "ioctl");
+  if (module === null) {
+    console.error('No module named "ioctl"');
+    return null;
+  }
+  return new NativeFunction(module, "int", ["int", "ulong", "...", "pointer"]);
+};
 
 export interface IoctlResponse {
   retval: NativeReturnValue;
@@ -16,22 +17,26 @@ export const sendIoctl = (
   request: number,
   data: ArrayBuffer
 ): IoctlResponse => {
-  let _data: NativePointer | null;
+  let _data: NativePointer;
 
-  if (!!data) {
+  if (data.byteLength !== 0) {
     _data = Memory.alloc(data.byteLength);
     _data.writeByteArray(data);
   } else {
     _data = ptr("0x0");
   }
 
-  const ret = ioctl(libcModuleName)(fd, request, _data);
+  const ioctlFunc = ioctl(libcModuleName);
+  if (ioctlFunc === null) {
+    return { retval: 0, data: [] };
+  }
+  const ret = ioctlFunc(fd, request, _data);
 
   let outData: number[] = [];
-  if (!!data) {
-    outData = Array.prototype.slice.call(
-      new Uint8Array(_data.readByteArray(data.byteLength))
-    );
+  const arrData = _data.readByteArray(data.byteLength);
+  if (arrData !== null) {
+    const arr = new Uint8Array(arrData);
+    outData = [...arr];
   }
 
   return { retval: ret, data: outData };

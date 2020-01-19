@@ -16,12 +16,12 @@ export const getEventsRangeStart = (
   req: express.Request,
   res: express.Response
 ) => {
-  const begin = parseInt(req.params.begin, 10);
+  /*  const begin = parseInt(req.params.begin, 10);
   if (begin < 0 || begin >= this.syscallEvents.length) {
     res.status(500).send("Invalid range");
   } else {
     res.send(this.syscallEvents.slice(begin, this.syscallEvents.length));
-  }
+  }*/
 };
 
 /*
@@ -44,7 +44,7 @@ export const getEventsRangeStartEnd = (
 ) => {
   const begin = parseInt(req.params.begin, 10);
   const end = parseInt(req.params.end, 10);
-  if (
+  /*  if (
     begin < 0 ||
     begin >= this.syscallEvents.length ||
     end < 0 ||
@@ -54,5 +54,5 @@ export const getEventsRangeStartEnd = (
     res.status(500).send("Invalid range");
   } else {
     res.send(this.syscallEvents.slice(begin, end));
-  }
+  }*/
 };

@@ -5,6 +5,7 @@ import { ScriptMessageHandler, Message, MessageType } from "frida/dist/script";
 import { memoResolveFileDescriptor } from "../../shared/util/procs";
 import { defaultTo } from "lodash";
 import { getWebSocket } from "../websocket";
+import { Syscall } from "../../shared/types/syscalls";
 /*
    # API Definition
    POST /session/attach
@@ -19,8 +20,14 @@ import { getWebSocket } from "../websocket";
  */
 export const sessionInstall = async (req: Request, res: Response) => {
   const { pid, adb } = req.body;
+  const { user } = req;
+  if (!user) {
+    res.status(403).send("No user");
+    return;
+  }
+
   const session = await install(
-    req.user,
+    user,
     pid,
     adb,
     onFridaMessage(pid, adb),
@@ -44,7 +51,7 @@ const onFridaMessage = (pid: number, adb: boolean): ScriptMessageHandler => (
 ): void => {
   switch (message.type) {
     case MessageType.Send:
-      let event: SharedTypes.Syscall = Object.assign(
+      let event: Syscall = Object.assign(
         {},
         { type: message.type, ...message.payload }
       );
@@ -59,10 +66,9 @@ const onFridaMessage = (pid: number, adb: boolean): ScriptMessageHandler => (
           `<unknown:${event.fd}>`
         )
       });
-
       const ws = getWebSocket();
       if (ws !== null) {
-        ws.send(event);
+        ws.send(JSON.stringify(event));
       }
       events.insert(event);
       break;
