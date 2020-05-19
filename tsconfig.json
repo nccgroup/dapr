@@ -1,20 +1,9 @@
 {
-  "compileOnSave": true,
   "compilerOptions": {
     "strict": true,
-    "watch": true,
-    "outDir": "./bin",
-    "baseUrl": "src",
     "sourceMap": true,
-    "declaration": false,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "typeRoots": ["node_modules/@types"],
-    "target": "es2018",
-    "lib": ["esnext"]
-  },
-  "include": ["src", "shared"],
-  "exclude": ["./ui", "**/*.spec.ts", "frida-scripts"]
+    "target": "es5", // need to target es5 for frida scripts to be read
+    "jsx": "react",
+    "lib": ["es6", "dom"]
+  }
 }

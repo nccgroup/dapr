@@ -3,42 +3,58 @@
   "version": "2.1.0",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": "8 10 12"
+  },
   "dependencies": {
     "body-parser": "^1.18.3",
     "commander": "^2.19.0",
     "cors": "^2.8.5",
+    "css-loader": "^3.5.3",
     "express": "^4.16.4",
-    "frida": "^12.7.4",
+    "frida": "^12.9.2",
+    "frida-compile": "^9.3.0",
     "int64-buffer": "^0.99.1007",
     "jsonwebtoken": "^8.5.1",
     "lokijs": "^1.5.8",
     "ps-list": "^6.3.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-redux": "^7.2.0",
+    "react-table": "^7.1.0",
+    "redux": "^4.0.5",
+    "typesafe-actions": "^5.1.0",
     "ws": "^7.2.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.2",
-    "@types/jsonwebtoken": "^8.3.5",
-    "@types/ws": "^6.0.4",
     "@types/cors": "^2.8.6",
     "@types/frida-gum": "^14.5.0",
+    "@types/jsonwebtoken": "^8.3.5",
     "@types/lodash": "^4.14.149",
     "@types/lokijs": "^1.5.2",
     "@types/node": "^10.14.19",
+    "@types/react": "^16.9.35",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-redux": "^7.1.8",
+    "@types/react-table": "^7.0.17",
+    "@types/ws": "^6.0.4",
     "concurrently": "^4.1.2",
-    "source-map-support": "^0.5.9",
+    "copy-webpack-plugin": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "source-map-loader": "^0.2.4",
     "supervisor": "^0.12.0",
-    "typescript": "^3.7.4"
-  },
-  "bin": {
-    "dap": "bin/src/index.js"
+    "ts-loader": "^7.0.4",
+    "typescript": "^3.9.2",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
   },
   "scripts": {
     "start": "npx concurrently 'npm run watch-*' 'npm run dap'",
     "rm": "npx concurrently 'npm run clean-*'",
     "clean-dapr": "rm -rf node_modules/ package-lock.json",
     "clean-ui": "rm -rf ui/node_modules/ ui/package-lock.json",
-    "watch-frida":
-      "cd frida-scripts/ && npx frida-compile -c index.ts -o ../bin/ioctler.js -w",
+    "watch-frida": "cd frida-scripts/ && npx frida-compile -c index.ts -o ../bin/ioctler.js -w",
     "watch-app": "npx tsc",
     "watch-ui": "cd ui && npm run start",
     "dap": "supervisor -w bin  bin/src/index.js"
