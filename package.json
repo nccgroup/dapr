@@ -5,11 +5,11 @@
   "private": true,
   "dependencies": {
     "@types/core-js": "^2.5.0",
-    "body-parser": "^1.18.3",
+    "body-parser": "^1.20.1",
     "commander": "^2.19.0",
     "core-js": "2.4.1",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
+    "express": "^4.18.2",
     "express-ws": "^4.0.0",
     "frida": "^12.7.5",
     "int64-buffer": "^0.99.1007"
